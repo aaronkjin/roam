@@ -9,6 +9,7 @@ export async function GET() {
     .order("created_at", { ascending: false });
 
   if (error) {
+    console.error("[GET /api/trips]", error.message, error.code);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
+    console.error("[POST /api/trips]", error.message, error.code);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
