@@ -29,6 +29,11 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: "Roam - Travel Planning for Adventurers",
   description: "Collect inspo, generate itineraries, and plan your next adventure with AI.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
