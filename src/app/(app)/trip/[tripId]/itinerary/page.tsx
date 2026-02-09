@@ -1,9 +1,11 @@
+"use client";
+
+import { useParams } from "next/navigation";
+import { ItineraryEditor } from "@/components/itinerary/ItineraryEditor";
+
 export default function ItineraryPage() {
-  return (
-    <div className="p-6">
-      <p className="text-rock text-sm font-[family-name:var(--font-silkscreen)]">
-        Itinerary editor coming soon...
-      </p>
-    </div>
-  );
+  const params = useParams();
+  const tripId = params.tripId as string;
+
+  return <ItineraryEditor tripId={tripId} />;
 }
