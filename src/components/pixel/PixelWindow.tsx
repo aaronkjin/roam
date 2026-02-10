@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
 
 interface PixelWindowProps {
   title?: string;
@@ -43,9 +44,12 @@ export function PixelWindow({
             {onClose ? (
               <button
                 onClick={onClose}
-                className="w-2.5 h-2.5 bg-jam border border-night hover:bg-destructive transition-colors cursor-pointer"
+                type="button"
+                className="w-2.5 h-2.5 bg-jam border border-night hover:bg-destructive transition-colors cursor-pointer flex items-center justify-center"
                 title="Delete"
-              />
+              >
+                <X className="w-1.5 h-1.5 text-white" strokeWidth={3} />
+              </button>
             ) : (
               <div className="w-2.5 h-2.5 bg-jam border border-night" />
             )}

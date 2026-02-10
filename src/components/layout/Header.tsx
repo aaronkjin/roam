@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 
@@ -18,14 +19,18 @@ export function Header({ onToggleSidebar }: HeaderProps) {
       >
         <Menu className="w-5 h-5" />
       </Button>
-      <div className="flex items-center gap-3">
+      <Link
+        href="/dashboard"
+        className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+        aria-label="Go to dashboard"
+      >
         <div className="w-8 h-8 bg-jam border-[3px] border-night pixel-shadow-sm flex items-center justify-center">
           <span className="font-[family-name:var(--font-press-start)] text-white text-[8px]">R</span>
         </div>
         <h1 className="font-[family-name:var(--font-press-start)] text-night text-sm tracking-wider">
           ROAM
         </h1>
-      </div>
+      </Link>
       <div className="flex-1" />
       <div className="hidden sm:flex items-center gap-2 text-xs text-rock font-[family-name:var(--font-silkscreen)]">
         Travel Planning for Adventurers
