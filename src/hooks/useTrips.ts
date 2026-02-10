@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { Trip, CreateTripInput } from "@/types/trip";
+import type { Trip, CreateTripInput, UpdateTripInput } from "@/types/trip";
 
 export function useTrips() {
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -44,5 +44,22 @@ export function useTrips() {
     }
   }, []);
 
-  return { trips, loading, error, fetchTrips, createTrip };
+  const updateTrip = useCallback(async (id: string, input: UpdateTripInput): Promise<Trip | null> => {
+    try {
+      const res = await fetch("/api/trips", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...input }),
+      });
+      if (!res.ok) throw new Error("Failed to update trip");
+      const updated = await res.json();
+      setTrips((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      return updated;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+      return null;
+    }
+  }, []);
+
+  return { trips, loading, error, fetchTrips, createTrip, updateTrip };
 }

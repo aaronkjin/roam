@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Calendar, Edit2 } from "lucide-react";
 import type { Trip } from "@/types/trip";
 
 interface TripCardProps {
   trip: Trip;
+  onEdit: (trip: Trip) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -16,10 +18,24 @@ const statusColors: Record<string, string> = {
   archived: "bg-rock text-white",
 };
 
-export function TripCard({ trip }: TripCardProps) {
+export function TripCard({ trip, onEdit }: TripCardProps) {
   return (
-    <Link href={`/trip/${trip.id}/inspo`}>
-      <div className="border-[3px] border-night bg-white pixel-shadow pixel-shadow-hover p-4 space-y-3 h-full">
+    <div className="border-[3px] border-night bg-white pixel-shadow pixel-shadow-hover h-full relative group">
+      {/* Edit button - top right, appears on hover */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="absolute top-2 right-2 z-10 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity bg-white"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onEdit(trip);
+        }}
+      >
+        <Edit2 className="w-3.5 h-3.5" />
+      </Button>
+
+      <Link href={`/trip/${trip.id}/inspo`} className="block p-4 space-y-3">
         {/* Cover image or placeholder */}
         {trip.cover_image_url ? (
           <div className="h-32 border-[2px] border-night overflow-hidden -mx-4 -mt-4 mb-3">
@@ -64,7 +80,7 @@ export function TripCard({ trip }: TripCardProps) {
             </p>
           )}
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

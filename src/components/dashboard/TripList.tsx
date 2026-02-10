@@ -7,9 +7,10 @@ import type { Trip } from "@/types/trip";
 interface TripListProps {
   trips: Trip[];
   loading: boolean;
+  onEditTrip: (trip: Trip) => void;
 }
 
-export function TripList({ trips, loading }: TripListProps) {
+export function TripList({ trips, loading, onEditTrip }: TripListProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -23,7 +24,7 @@ export function TripList({ trips, loading }: TripListProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {trips.map((trip) => (
-        <TripCard key={trip.id} trip={trip} />
+        <TripCard key={trip.id} trip={trip} onEdit={onEditTrip} />
       ))}
     </div>
   );

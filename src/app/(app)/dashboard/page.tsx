@@ -4,13 +4,16 @@ import { useState } from "react";
 import { useTrips } from "@/hooks/useTrips";
 import { TripList } from "@/components/dashboard/TripList";
 import { CreateTripModal } from "@/components/dashboard/CreateTripModal";
+import { EditTripModal } from "@/components/dashboard/EditTripModal";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
 import { Button } from "@/components/ui/button";
 import { Plus, Compass } from "lucide-react";
+import type { Trip } from "@/types/trip";
 
 export default function DashboardPage() {
-  const { trips, loading } = useTrips();
+  const { trips, loading, updateTrip } = useTrips();
   const [createOpen, setCreateOpen] = useState(false);
+  const [editTrip, setEditTrip] = useState<Trip | null>(null);
 
   return (
     <div className="p-6 space-y-6">
@@ -40,10 +43,16 @@ export default function DashboardPage() {
           </div>
         </PixelWindow>
       ) : (
-        <TripList trips={trips} loading={loading} />
+        <TripList trips={trips} loading={loading} onEditTrip={setEditTrip} />
       )}
 
       <CreateTripModal open={createOpen} onOpenChange={setCreateOpen} />
+      <EditTripModal
+        trip={editTrip}
+        open={!!editTrip}
+        onOpenChange={(open) => !open && setEditTrip(null)}
+        onSave={updateTrip}
+      />
     </div>
   );
 }
