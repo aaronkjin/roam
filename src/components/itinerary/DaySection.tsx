@@ -17,6 +17,7 @@ interface DaySectionProps {
   onUpdateBlock: (blockId: string, input: UpdateBlockInput) => void;
   onDeleteBlock: (blockId: string) => void;
   onAddBlock: (input: CreateBlockInput) => void;
+  onDeleteDay: (dayId: string) => void;
 }
 
 export function DaySection({
@@ -25,6 +26,7 @@ export function DaySection({
   onUpdateBlock,
   onDeleteBlock,
   onAddBlock,
+  onDeleteDay,
 }: DaySectionProps) {
   const handleAddBlock = useCallback(
     (type: BlockType) => {
@@ -41,6 +43,7 @@ export function DaySection({
     <PixelWindow
       title={`Day ${day.day_number}${day.title ? ` — ${day.title}` : ""}`}
       variant="mist"
+      onClose={() => onDeleteDay(day.id)}
     >
       <div className="space-y-3">
         {/* Day header - editable */}

@@ -125,6 +125,21 @@ export function useItinerary(tripId: string) {
     [fetchItinerary]
   );
 
+  const deleteDay = useCallback(async (dayId: string) => {
+    // Optimistic update
+    setDays((prev) => prev.filter((day) => day.id !== dayId));
+
+    try {
+      const res = await fetch(`/api/itinerary/days/${dayId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete day");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+      fetchItinerary(); // Revert on error
+    }
+  }, [fetchItinerary]);
+
   const updateDay = useCallback(
     async (dayId: string, input: { title?: string; summary?: string }) => {
       setDays((prev) =>
@@ -154,6 +169,7 @@ export function useItinerary(tripId: string) {
     updateBlock,
     deleteBlock,
     reorderBlocks,
+    deleteDay,
     updateDay,
     setDays,
   };

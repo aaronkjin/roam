@@ -7,6 +7,7 @@ interface PixelWindowProps {
   children: React.ReactNode;
   className?: string;
   variant?: "default" | "jam" | "moss" | "mist";
+  onClose?: () => void;
 }
 
 const variantColors = {
@@ -21,6 +22,7 @@ export function PixelWindow({
   children,
   className,
   variant = "default",
+  onClose,
 }: PixelWindowProps) {
   return (
     <div
@@ -38,7 +40,15 @@ export function PixelWindow({
         >
           {/* Window decoration dots */}
           <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 bg-jam border border-night" />
+            {onClose ? (
+              <button
+                onClick={onClose}
+                className="w-2.5 h-2.5 bg-jam border border-night hover:bg-destructive transition-colors cursor-pointer"
+                title="Delete"
+              />
+            ) : (
+              <div className="w-2.5 h-2.5 bg-jam border border-night" />
+            )}
             <div className="w-2.5 h-2.5 bg-grass border border-night" />
             <div className="w-2.5 h-2.5 bg-mist border border-night" />
           </div>

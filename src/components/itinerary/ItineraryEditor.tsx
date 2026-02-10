@@ -34,6 +34,7 @@ export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
     updateBlock,
     deleteBlock,
     reorderBlocks,
+    deleteDay,
     updateDay,
     setDays,
   } = useItinerary(tripId);
@@ -113,6 +114,13 @@ export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
     [deleteBlock]
   );
 
+  const handleDeleteDay = useCallback(
+    (dayId: string) => {
+      deleteDay(dayId);
+    },
+    [deleteDay]
+  );
+
   if (loading) {
     return (
       <div className="p-6 space-y-4 max-w-3xl mx-auto">
@@ -170,6 +178,7 @@ export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
             onUpdateBlock={handleUpdateBlock}
             onDeleteBlock={handleDeleteBlock}
             onAddBlock={handleAddBlock}
+            onDeleteDay={handleDeleteDay}
           />
         ))}
       </DndContext>
