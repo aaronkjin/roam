@@ -2,9 +2,7 @@
 
 An idea-curation, travel-planning web app.
 
-[![Watch demo](docs/demo.png)](docs/demo.mp4)
-
-[Watch full demo video (WIP)](docs/demo.mp4)
+![Demo](docs/demo.gif)
 
 ## What it does
 
