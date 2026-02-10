@@ -133,6 +133,7 @@ export function InspoBoard({ tripId }: InspoBoardProps) {
         item={previewItem}
         open={!!previewItem}
         onOpenChange={(open) => !open && setPreviewItem(null)}
+        onUpdate={updateItem}
       />
     </div>
   );
