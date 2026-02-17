@@ -5,7 +5,7 @@ export async function GET() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("trips")
-    .select("*")
+    .select("*, inspo_items(image_url)")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -13,7 +13,16 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  const trips = data.map(({ inspo_items, ...trip }) => ({
+    ...trip,
+    cover_image_url:
+      trip.cover_image_url ??
+      inspo_items?.find((i: { image_url: string | null }) => i.image_url)
+        ?.image_url ??
+      null,
+  }));
+
+  return NextResponse.json(trips);
 }
 
 export async function PATCH(req: NextRequest) {

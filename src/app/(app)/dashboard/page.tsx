@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTrips } from "@/hooks/useTrips";
+import { useTrips } from "@/context/TripsContext";
 import { TripList } from "@/components/dashboard/TripList";
 import { CreateTripModal } from "@/components/dashboard/CreateTripModal";
 import { EditTripModal } from "@/components/dashboard/EditTripModal";

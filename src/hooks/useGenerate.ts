@@ -14,7 +14,12 @@ export function useGenerate({ tripId }: UseGenerateOptions) {
   const [error, setError] = useState<string | null>(null);
 
   const generate = useCallback(
-    async (mode: GenerationMode, numDays: number, selectedInspoIds?: string[]) => {
+    async (
+      mode: GenerationMode,
+      numDays: number,
+      selectedInspoIds?: string[],
+      options?: { startDate?: string; endDate?: string; stayAddress?: string }
+    ) => {
       setGenerating(true);
       setStreamedText("");
       setResult(null);
@@ -29,6 +34,9 @@ export function useGenerate({ tripId }: UseGenerateOptions) {
             mode,
             num_days: numDays,
             selected_inspo_ids: selectedInspoIds,
+            start_date: options?.startDate,
+            end_date: options?.endDate,
+            stay_address: options?.stayAddress,
           }),
         });
 

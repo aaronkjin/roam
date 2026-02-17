@@ -2,14 +2,15 @@
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, ExternalLink, Trash2, Edit2, StickyNote, Link, Image, Video, FileText } from "lucide-react";
+import { MoreVertical, ExternalLink, Trash2, Edit2, StickyNote, Link, Image, Video, FileText, GripVertical } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { InspoItem } from "@/types/inspo";
 
 interface InspoCardProps {
@@ -37,11 +38,35 @@ const typeColors = {
 export function InspoCard({ item, onEdit, onDelete }: InspoCardProps) {
   const TypeIcon = typeIcons[item.type];
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   return (
-    <div className="border-[3px] border-night bg-white pixel-shadow pixel-shadow-hover break-inside-avoid mb-4">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="border-[3px] border-night bg-white pixel-shadow pixel-shadow-hover h-[32rem] flex flex-col overflow-hidden"
+    >
       {/* Card header bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-night text-white">
+      <div
+        className="flex items-center justify-between px-3 py-1.5 bg-night text-white cursor-grab active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
         <div className="flex items-center gap-2">
+          <GripVertical className="w-3 h-3 opacity-50" />
           <TypeIcon className="w-3.5 h-3.5" />
           <span className="text-[10px] font-[family-name:var(--font-silkscreen)] uppercase">
             {item.type}
@@ -49,7 +74,10 @@ export function InspoCard({ item, onEdit, onDelete }: InspoCardProps) {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="p-0.5 hover:bg-white/20 transition-colors">
+            <button
+              className="p-0.5 hover:bg-white/20 transition-colors"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <MoreVertical className="w-3.5 h-3.5" />
             </button>
           </DropdownMenuTrigger>
@@ -77,19 +105,26 @@ export function InspoCard({ item, onEdit, onDelete }: InspoCardProps) {
         </DropdownMenu>
       </div>
 
-      {/* Image preview */}
-      {item.image_url && (
-        <div className="border-b-[3px] border-night overflow-hidden">
+      {/* Image preview — fills remaining space above content */}
+      {item.image_url ? (
+        <div className="border-b-[3px] border-night overflow-hidden flex-1 min-h-0">
           <img
             src={item.image_url}
             alt={item.title || "Inspo image"}
-            className="w-full h-40 object-cover"
+            className="w-full h-full object-cover"
           />
         </div>
-      )}
+      ) : item.type === "video" && item.url ? (
+        <div className="border-b-[3px] border-night overflow-hidden bg-night/5 flex-1 min-h-0 flex flex-col items-center justify-center gap-2">
+          <Video className="w-8 h-8 text-jam" />
+          <span className="text-[10px] font-[family-name:var(--font-silkscreen)] text-rock">
+            Video
+          </span>
+        </div>
+      ) : null}
 
       {/* Content */}
-      <div className="p-3">
+      <div className="p-3 flex-shrink-0">
         {item.title && (
           <h4 className="text-sm font-bold text-night mb-1 line-clamp-2">
             {item.title}

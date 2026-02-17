@@ -80,5 +80,33 @@ export function useInspoItems(tripId: string) {
     }
   }, []);
 
-  return { items, loading, error, fetchItems, addItem, updateItem, deleteItem };
+  const reorderItems = useCallback(async (orderedIds: string[]) => {
+    // Optimistically reorder in state
+    setItems((prev) => {
+      const map = new Map(prev.map((item) => [item.id, item]));
+      return orderedIds
+        .map((id) => map.get(id))
+        .filter((item): item is InspoItem => !!item);
+    });
+
+    // Persist to backend
+    try {
+      const payload = orderedIds.map((id, index) => ({
+        id,
+        position_index: index,
+      }));
+      const res = await fetch("/api/inspo/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: payload }),
+      });
+      if (!res.ok) throw new Error("Failed to reorder items");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+      // Refetch to restore correct order on failure
+      fetchItems();
+    }
+  }, [fetchItems]);
+
+  return { items, loading, error, fetchItems, addItem, updateItem, deleteItem, reorderItems };
 }

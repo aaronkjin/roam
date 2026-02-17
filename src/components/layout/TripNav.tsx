@@ -32,8 +32,9 @@ export function TripNav({ tripId }: TripNavProps) {
             className={cn(
               "flex items-center gap-2 px-6 py-3 font-[family-name:var(--font-silkscreen)] text-sm uppercase tracking-wider transition-colors border-b-[3px] -mb-[3px]",
               i > 0 && "border-l-[3px] border-l-night",
+              i === tabs.length - 1 && "border-r-[3px] border-r-night",
               isActive
-                ? "bg-jam text-white border-b-jam"
+                ? "bg-sky text-white border-b-night"
                 : "text-rock hover:text-night hover:bg-sky/20 border-b-transparent"
             )}
           >
