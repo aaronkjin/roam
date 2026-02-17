@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { useTrips } from "@/hooks/useTrips";
+import { useTrips } from "@/context/TripsContext";
 import { CreateTripModal } from "@/components/dashboard/CreateTripModal";
 
 export function AppShell({ children }: { children: React.ReactNode }) {

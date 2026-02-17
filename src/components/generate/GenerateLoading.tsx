@@ -1,8 +1,8 @@
 "use client";
 
 import { PixelProgress } from "@/components/pixel/PixelProgress";
-import { PixelSpinner } from "@/components/pixel/PixelSpinner";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
+import { SmiskiBuilder } from "@/components/pixel/SmiskiBuilder";
 
 interface GenerateLoadingProps {
   streamedText: string;
@@ -22,29 +22,20 @@ export function GenerateLoading({ streamedText }: GenerateLoadingProps) {
   const msgIndex = Math.floor(progress / 20) % loadingMessages.length;
 
   return (
-    <PixelWindow title="Generating..." variant="jam">
+    <PixelWindow title="Generating..." variant="moss">
       <div className="space-y-4 py-4">
-        <div className="flex items-center gap-3">
-          <PixelSpinner size="lg" />
-          <div>
-            <p className="font-[family-name:var(--font-silkscreen)] text-sm text-night">
-              {loadingMessages[msgIndex]}
-            </p>
-            <p className="text-xs text-rock mt-1">
-              AI is crafting your itinerary
-            </p>
-          </div>
+        <SmiskiBuilder />
+
+        <div className="text-center">
+          <p className="font-[family-name:var(--font-silkscreen)] text-sm text-night">
+            {loadingMessages[msgIndex]}
+          </p>
+          <p className="text-xs text-rock mt-1">
+            AI is crafting your itinerary
+          </p>
         </div>
 
         <PixelProgress value={progress} variant="grass" />
-
-        {streamedText && (
-          <div className="max-h-48 overflow-y-auto p-3 bg-night/5 border-[2px] border-night/20">
-            <pre className="text-[10px] text-rock font-mono whitespace-pre-wrap break-all">
-              {streamedText.slice(-500)}
-            </pre>
-          </div>
-        )}
       </div>
     </PixelWindow>
   );

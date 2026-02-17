@@ -11,11 +11,8 @@ interface InspoFiltersProps {
 
 const filters: { value: InspoType | "all"; label: string; icon: React.ElementType }[] = [
   { value: "all", label: "All", icon: LayoutGrid },
-  { value: "link", label: "Links", icon: Link },
   { value: "image", label: "Images", icon: Image },
   { value: "video", label: "Videos", icon: Video },
-  { value: "article", label: "Articles", icon: FileText },
-  { value: "note", label: "Notes", icon: StickyNote },
 ];
 
 export function InspoFilters({ activeFilter, onFilterChange }: InspoFiltersProps) {
@@ -29,7 +26,11 @@ export function InspoFilters({ activeFilter, onFilterChange }: InspoFiltersProps
             variant={activeFilter === f.value ? "default" : "outline"}
             size="sm"
             onClick={() => onFilterChange(f.value)}
-            className="text-xs gap-1.5"
+            className={
+              activeFilter === f.value
+                ? "text-xs gap-1.5 bg-grass text-white hover:bg-grass/90"
+                : "text-xs gap-1.5"
+            }
           >
             <Icon className="w-3.5 h-3.5" />
             {f.label}

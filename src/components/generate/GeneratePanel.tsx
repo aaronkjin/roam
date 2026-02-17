@@ -11,7 +11,7 @@ import { GeneratePreview } from "./GeneratePreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
-import { Sparkles, Lightbulb } from "lucide-react";
+import { Sparkles, Lightbulb, MapPin } from "lucide-react";
 import type { GenerationMode } from "@/types/itinerary";
 import Link from "next/link";
 
@@ -26,8 +26,23 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
 
   const [mode, setMode] = useState<GenerationMode>("creative");
   const [numDays, setNumDays] = useState(3);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [stayAddress, setStayAddress] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [accepting, setAccepting] = useState(false);
+
+  // Auto-calculate numDays from date range
+  useMemo(() => {
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      if (diff > 0 && diff <= 14) {
+        setNumDays(diff);
+      }
+    }
+  }, [startDate, endDate]);
 
   // Initialize selectedIds when items load
   useMemo(() => {
@@ -50,8 +65,12 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
 
   const handleGenerate = useCallback(() => {
     if (selectedIds.size === 0) return;
-    generate(mode, numDays, Array.from(selectedIds));
-  }, [generate, mode, numDays, selectedIds]);
+    generate(mode, numDays, Array.from(selectedIds), {
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      stayAddress: stayAddress || undefined,
+    });
+  }, [generate, mode, numDays, selectedIds, startDate, endDate, stayAddress]);
 
   const handleAccept = useCallback(async () => {
     if (!result) return;
@@ -130,36 +149,78 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
           />
 
           {/* Settings */}
-          <div className="flex flex-wrap items-end gap-6">
-            <div>
-              <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
-                Mode
-              </label>
-              <ModeToggle mode={mode} onModeChange={setMode} />
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-end gap-6">
+              <div>
+                <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
+                  Mode
+                </label>
+                <ModeToggle mode={mode} onModeChange={setMode} />
+              </div>
+
+              <div>
+                <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
+                  Start Date
+                </label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-40"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
+                  End Date
+                </label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  min={startDate || undefined}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-40"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
+                  Days
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={14}
+                  value={numDays}
+                  onChange={(e) => setNumDays(Number(e.target.value))}
+                  className="w-20"
+                  disabled={!!(startDate && endDate)}
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
-                Days
-              </label>
-              <Input
-                type="number"
-                min={1}
-                max={14}
-                value={numDays}
-                onChange={(e) => setNumDays(Number(e.target.value))}
-                className="w-20"
-              />
-            </div>
+            <div className="flex items-end gap-6">
+              <div className="flex-1">
+                <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
+                  <MapPin className="w-3 h-3 inline mr-1" />
+                  Where are you staying?
+                </label>
+                <Input
+                  type="text"
+                  placeholder="e.g. Hotel Negresco, Nice"
+                  value={stayAddress}
+                  onChange={(e) => setStayAddress(e.target.value)}
+                />
+              </div>
 
-            <Button
-              onClick={handleGenerate}
-              disabled={selectedIds.size === 0}
-              className="ml-auto"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Generate
-            </Button>
+              <Button
+                onClick={handleGenerate}
+                disabled={selectedIds.size === 0}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generate
+              </Button>
+            </div>
           </div>
 
           {/* Mode descriptions */}

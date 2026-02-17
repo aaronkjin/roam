@@ -35,10 +35,38 @@ Guidelines:
 - Cost estimates in USD unless specified
 - Always output ONLY the JSON, no markdown or extra text`;
 
+interface TripContext {
+  startDate?: string;
+  endDate?: string;
+  stayAddress?: string;
+}
+
+function buildTripContextBlock(ctx?: TripContext): string {
+  const lines: string[] = [];
+  if (ctx?.startDate && ctx?.endDate) {
+    const start = new Date(ctx.startDate);
+    const end = new Date(ctx.endDate);
+    const fmt = (d: Date) =>
+      d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    lines.push(`Trip dates: ${fmt(start)} – ${fmt(end)}`);
+    lines.push(
+      "Use real dates for each day heading (e.g. \"Day 1 — March 15, 2026\"). The title field for each day should include the real date."
+    );
+  }
+  if (ctx?.stayAddress) {
+    lines.push(`Staying at: ${ctx.stayAddress}`);
+    lines.push(
+      "Factor in proximity to the accommodation when ordering activities. Suggest nearby breakfast/dinner spots when appropriate."
+    );
+  }
+  return lines.length > 0 ? "\n" + lines.join("\n") + "\n" : "";
+}
+
 export function buildStrictPrompt(
   inspoItems: InspoItem[],
   destination: string | null,
-  numDays: number
+  numDays: number,
+  ctx?: TripContext
 ): string {
   const inspoSummary = inspoItems
     .map((item, i) => {
@@ -52,8 +80,10 @@ export function buildStrictPrompt(
     })
     .join("\n");
 
-  return `Generate a ${numDays}-day travel itinerary for ${destination || "this destination"}.
+  const tripContext = buildTripContextBlock(ctx);
 
+  return `Generate a ${numDays}-day travel itinerary for ${destination || "this destination"}.
+${tripContext}
 STRICT MODE: You MUST include ALL of the following specific places, activities, and restaurants from the user's inspiration. Build the itinerary around these exact locations. Do not substitute or replace them with alternatives.
 
 User's Inspiration Items:
@@ -65,7 +95,8 @@ Create a practical day-by-day plan that visits every single item listed above, a
 export function buildCreativePrompt(
   inspoItems: InspoItem[],
   destination: string | null,
-  numDays: number
+  numDays: number,
+  ctx?: TripContext
 ): string {
   const inspoSummary = inspoItems
     .map((item, i) => {
@@ -78,8 +109,10 @@ export function buildCreativePrompt(
     })
     .join("\n");
 
-  return `Generate a ${numDays}-day travel itinerary for ${destination || "this destination"}.
+  const tripContext = buildTripContextBlock(ctx);
 
+  return `Generate a ${numDays}-day travel itinerary for ${destination || "this destination"}.
+${tripContext}
 CREATIVE MODE: Use the following inspiration items to understand the traveler's vibes, interests, and aesthetic preferences. Then create a unique itinerary that captures the SPIRIT of what they like — feel free to suggest hidden gems, local favorites, and unexpected experiences that match their taste.
 
 User's Inspiration Vibes:

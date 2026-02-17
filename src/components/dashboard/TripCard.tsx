@@ -38,7 +38,7 @@ export function TripCard({ trip, onEdit }: TripCardProps) {
       <Link href={`/trip/${trip.id}/inspo`} className="block p-4 space-y-3">
         {/* Cover image or placeholder */}
         {trip.cover_image_url ? (
-          <div className="h-32 border-[2px] border-night overflow-hidden -mx-4 -mt-4 mb-3">
+          <div className="h-80 border-[2px] border-night overflow-hidden -mx-4 -mt-4 mb-3">
             <img
               src={trip.cover_image_url}
               alt={trip.title}
@@ -46,7 +46,7 @@ export function TripCard({ trip, onEdit }: TripCardProps) {
             />
           </div>
         ) : (
-          <div className="h-32 border-[2px] border-night bg-gradient-to-br from-mist to-sky flex items-center justify-center -mx-4 -mt-4 mb-3">
+          <div className="h-80 border-[2px] border-night bg-gradient-to-br from-mist to-sky flex items-center justify-center -mx-4 -mt-4 mb-3">
             <MapPin className="w-8 h-8 text-night/40" />
           </div>
         )}

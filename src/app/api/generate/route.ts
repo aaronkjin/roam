@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { trip_id, mode = "creative", num_days = 3, selected_inspo_ids } = body;
+  const { trip_id, mode = "creative", num_days = 3, selected_inspo_ids, start_date, end_date, stay_address } = body;
 
   if (!trip_id) {
     return new Response(JSON.stringify({ error: "trip_id is required" }), {
@@ -50,10 +50,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Build prompt
+  const tripCtx = { startDate: start_date, endDate: end_date, stayAddress: stay_address };
   const userPrompt =
     mode === "strict"
-      ? buildStrictPrompt(inspoItems, trip.destination, num_days)
-      : buildCreativePrompt(inspoItems, trip.destination, num_days);
+      ? buildStrictPrompt(inspoItems, trip.destination, num_days, tripCtx)
+      : buildCreativePrompt(inspoItems, trip.destination, num_days, tripCtx);
 
   // Log the generation
   await supabase.from("generation_logs").insert({

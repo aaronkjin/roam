@@ -1,6 +1,21 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
 import { useInspoItems } from "@/hooks/useInspoItems";
 import { InspoCard } from "./InspoCard";
 import { InspoAddModal } from "./InspoAddModal";
@@ -19,7 +34,8 @@ interface InspoBoardProps {
 }
 
 export function InspoBoard({ tripId }: InspoBoardProps) {
-  const { items, loading, addItem, updateItem, deleteItem } = useInspoItems(tripId);
+  const { items, loading, addItem, updateItem, deleteItem, reorderItems } =
+    useInspoItems(tripId);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [previewItem, setPreviewItem] = useState<InspoItem | null>(null);
   const [filter, setFilter] = useState<InspoType | "all">("all");
@@ -27,9 +43,48 @@ export function InspoBoard({ tripId }: InspoBoardProps) {
   const filteredItems =
     filter === "all" ? items : items.filter((item) => item.type === filter);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = filteredItems.findIndex((i) => i.id === active.id);
+      const newIndex = filteredItems.findIndex((i) => i.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      // Build new ordered list
+      const reordered = [...filteredItems];
+      const [moved] = reordered.splice(oldIndex, 1);
+      reordered.splice(newIndex, 0, moved);
+
+      // If we're filtering, we need to merge the reordered filtered items
+      // back into the full items list preserving unfiltered items' positions
+      if (filter !== "all") {
+        const fullReordered = items.filter(
+          (item) => item.type !== filter
+        );
+        // Insert filtered items at their new positions interleaved
+        // Simple approach: put all filtered items at the end in new order
+        const newIds = [...fullReordered.map((i) => i.id), ...reordered.map((i) => i.id)];
+        reorderItems(newIds);
+      } else {
+        reorderItems(reordered.map((i) => i.id));
+      }
+    },
+    [filteredItems, items, filter, reorderItems]
+  );
+
   const handleUrlDrop = useCallback(
     (url: string) => {
-      // Quick add with just URL, modal will parse it
       addItem({ type: "link", url });
     },
     [addItem]
@@ -44,6 +99,11 @@ export function InspoBoard({ tripId }: InspoBoardProps) {
       await deleteItem(id);
     },
     [deleteItem]
+  );
+
+  const sortableIds = useMemo(
+    () => filteredItems.map((i) => i.id),
+    [filteredItems]
   );
 
   if (loading) {
@@ -69,12 +129,20 @@ export function InspoBoard({ tripId }: InspoBoardProps) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <InspoFilters activeFilter={filter} onFilterChange={setFilter} />
         <div className="flex gap-2">
-          <Button onClick={() => setAddModalOpen(true)} size="sm">
+          <Button
+            onClick={() => setAddModalOpen(true)}
+            size="sm"
+            className="bg-[#2D6A4F] hover:bg-[#245A42] text-white"
+          >
             <Plus className="w-4 h-4 mr-1" />
             Add Inspo
           </Button>
           {items.length > 0 && (
-            <Button asChild variant="secondary" size="sm">
+            <Button
+              asChild
+              size="sm"
+              className="bg-jam hover:bg-jam/80 text-white"
+            >
               <Link href={`/trip/${tripId}/generate`}>
                 <Sparkles className="w-4 h-4 mr-1" />
                 Generate Itinerary
@@ -86,16 +154,24 @@ export function InspoBoard({ tripId }: InspoBoardProps) {
 
       {/* Board */}
       {filteredItems.length > 0 ? (
-        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
-          {filteredItems.map((item) => (
-            <InspoCard
-              key={item.id}
-              item={item}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredItems.map((item) => (
+                <InspoCard
+                  key={item.id}
+                  item={item}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       ) : items.length === 0 ? (
         <PixelWindow title="Getting Started" variant="mist">
           <div className="text-center py-8 space-y-4">
@@ -103,8 +179,9 @@ export function InspoBoard({ tripId }: InspoBoardProps) {
               No inspo yet!
             </p>
             <p className="text-sm text-rock max-w-md mx-auto">
-              Start collecting inspiration for your trip. Paste links from TikTok,
-              Instagram, blogs, or just jot down notes about what excites you.
+              Start collecting inspiration for your trip. Paste links from
+              TikTok, Instagram, blogs, or just jot down notes about what
+              excites you.
             </p>
             <Button onClick={() => setAddModalOpen(true)}>
               <Plus className="w-4 h-4 mr-1" />

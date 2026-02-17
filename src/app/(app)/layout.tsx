@@ -1,5 +1,10 @@
 import { AppShell } from "@/components/layout/AppShell";
+import { TripsProvider } from "@/context/TripsContext";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <TripsProvider>
+      <AppShell>{children}</AppShell>
+    </TripsProvider>
+  );
 }
