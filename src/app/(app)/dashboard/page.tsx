@@ -15,35 +15,55 @@ export default function DashboardPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTrip, setEditTrip] = useState<Trip | null>(null);
 
+  const activeTrips = trips.filter(
+    (t) => t.status !== "completed" && t.status !== "archived"
+  );
+  const pastTrips = trips.filter(
+    (t) => t.status === "completed" || t.status === "archived"
+  );
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base">Your Adventures</h2>
-        <Button onClick={() => setCreateOpen(true)} size="sm">
-          <Plus className="w-4 h-4 mr-1" />
-          New Trip
-        </Button>
+    <div className="p-6 space-y-8">
+      {/* Active trips */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base">Your Adventures</h2>
+          <Button onClick={() => setCreateOpen(true)} size="sm">
+            <Plus className="w-4 h-4 mr-1" />
+            New Trip
+          </Button>
+        </div>
+
+        {!loading && activeTrips.length === 0 && pastTrips.length === 0 ? (
+          <PixelWindow title="Welcome to Roam!" variant="jam">
+            <div className="text-center py-8 space-y-4">
+              <Compass className="w-16 h-16 text-jam mx-auto" />
+              <p className="font-[family-name:var(--font-press-start)] text-sm text-night">
+                Ready to explore?
+              </p>
+              <p className="text-sm text-rock max-w-md mx-auto">
+                Create your first trip to start collecting inspiration and planning
+                your next adventure.
+              </p>
+              <Button onClick={() => setCreateOpen(true)}>
+                <Plus className="w-4 h-4 mr-1" />
+                Create Your First Trip
+              </Button>
+            </div>
+          </PixelWindow>
+        ) : !loading && activeTrips.length === 0 ? (
+          <p className="text-sm text-rock">No active trips. Start a new one!</p>
+        ) : (
+          <TripList trips={activeTrips} loading={loading} onEditTrip={setEditTrip} />
+        )}
       </div>
 
-      {!loading && trips.length === 0 ? (
-        <PixelWindow title="Welcome to Roam!" variant="jam">
-          <div className="text-center py-8 space-y-4">
-            <Compass className="w-16 h-16 text-jam mx-auto" />
-            <p className="font-[family-name:var(--font-press-start)] text-sm text-night">
-              Ready to explore?
-            </p>
-            <p className="text-sm text-rock max-w-md mx-auto">
-              Create your first trip to start collecting inspiration and planning
-              your next adventure.
-            </p>
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="w-4 h-4 mr-1" />
-              Create Your First Trip
-            </Button>
-          </div>
-        </PixelWindow>
-      ) : (
-        <TripList trips={trips} loading={loading} onEditTrip={setEditTrip} />
+      {/* Past trips */}
+      {(loading || pastTrips.length > 0) && (
+        <div className="space-y-4">
+          <h2 className="text-base">Past Trips</h2>
+          <TripList trips={pastTrips} loading={loading} onEditTrip={setEditTrip} />
+        </div>
       )}
 
       <CreateTripModal open={createOpen} onOpenChange={setCreateOpen} />

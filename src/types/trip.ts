@@ -1,4 +1,4 @@
-export type TripStatus = "planning" | "generated" | "finalized" | "archived";
+export type TripStatus = "planning" | "generated" | "finalized" | "archived" | "completed";
 
 export interface Trip {
   id: string;
@@ -10,6 +10,9 @@ export interface Trip {
   start_date: string | null;
   end_date: string | null;
   status: TripStatus;
+  share_token: string | null;
+  overall_rating: number | null;
+  review_note: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -30,4 +33,6 @@ export interface UpdateTripInput {
   start_date?: string;
   end_date?: string;
   status?: TripStatus;
+  overall_rating?: number;
+  review_note?: string;
 }

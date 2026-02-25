@@ -16,6 +16,7 @@ const statusColors: Record<string, string> = {
   generated: "bg-grass text-night",
   finalized: "bg-moss text-white",
   archived: "bg-rock text-white",
+  completed: "bg-jam text-white",
 };
 
 export function TripCard({ trip, onEdit }: TripCardProps) {
