@@ -12,6 +12,7 @@ import { MoreVertical, ExternalLink, Trash2, Edit2, StickyNote, Link, Image, Vid
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { InspoItem } from "@/types/inspo";
+import { getProxiedImageUrl } from "@/lib/image-proxy";
 
 interface InspoCardProps {
   item: InspoItem;
@@ -109,7 +110,7 @@ export function InspoCard({ item, onEdit, onDelete }: InspoCardProps) {
       {item.image_url ? (
         <div className="border-b-[3px] border-night overflow-hidden flex-1 min-h-0">
           <img
-            src={item.image_url}
+            src={getProxiedImageUrl(item.image_url, item.url)}
             alt={item.title || "Inspo image"}
             className="w-full h-full object-cover"
           />

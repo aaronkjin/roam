@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Edit2 } from "lucide-react";
 import type { Trip } from "@/types/trip";
+import { getProxiedImageUrl } from "@/lib/image-proxy";
 
 interface TripCardProps {
   trip: Trip;
@@ -41,7 +42,7 @@ export function TripCard({ trip, onEdit }: TripCardProps) {
         {trip.cover_image_url ? (
           <div className="h-80 border-[2px] border-night overflow-hidden -mx-4 -mt-4 mb-3">
             <img
-              src={trip.cover_image_url}
+              src={getProxiedImageUrl(trip.cover_image_url)}
               alt={trip.title}
               className="w-full h-full object-cover"
             />

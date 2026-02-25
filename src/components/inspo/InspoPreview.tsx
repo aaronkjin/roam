@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PixelSpinner } from "@/components/pixel/PixelSpinner";
 import { ExternalLink, X } from "lucide-react";
 import type { InspoItem, UpdateInspoInput } from "@/types/inspo";
+import { getProxiedImageUrl } from "@/lib/image-proxy";
 
 interface InspoPreviewProps {
   item: InspoItem | null;
@@ -118,7 +119,7 @@ function InspoEditForm({
       {!embedUrl && item.image_url && (
         <div className="border-[3px] border-night overflow-hidden">
           <img
-            src={item.image_url}
+            src={getProxiedImageUrl(item.image_url, item.url)}
             alt={item.title || ""}
             className="w-full max-h-64 object-cover"
           />
@@ -286,7 +287,7 @@ function ReadOnlyPreview({ item }: { item: InspoItem }) {
       {!embedUrl && item.image_url && (
         <div className="border-[3px] border-night overflow-hidden">
           <img
-            src={item.image_url}
+            src={getProxiedImageUrl(item.image_url, item.url)}
             alt={item.title || ""}
             className="w-full max-h-64 object-cover"
           />
