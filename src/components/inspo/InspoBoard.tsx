@@ -20,7 +20,7 @@ import { useInspoItems } from "@/hooks/useInspoItems";
 import { InspoCard } from "./InspoCard";
 import { InspoAddModal } from "./InspoAddModal";
 import { InspoFilters } from "./InspoFilters";
-import { InspoDropZone } from "./InspoDropZone";
+
 import { InspoPreview } from "./InspoPreview";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -81,13 +81,6 @@ export function InspoBoard({ tripId }: InspoBoardProps) {
       }
     },
     [filteredItems, items, filter, reorderItems]
-  );
-
-  const handleUrlDrop = useCallback(
-    (url: string) => {
-      addItem({ type: "link", url });
-    },
-    [addItem]
   );
 
   const handleEdit = useCallback((item: InspoItem) => {
@@ -196,9 +189,6 @@ export function InspoBoard({ tripId }: InspoBoardProps) {
           </p>
         </div>
       )}
-
-      {/* Drop zone */}
-      {items.length > 0 && <InspoDropZone onUrlDrop={handleUrlDrop} />}
 
       {/* Modals */}
       <InspoAddModal
