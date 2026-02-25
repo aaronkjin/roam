@@ -9,11 +9,16 @@ import { CreateTripModal } from "@/components/dashboard/CreateTripModal";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const { trips } = useTrips();
 
   const handleCreateTrip = useCallback(() => {
     setCreateModalOpen(true);
+  }, []);
+
+  const handleToggleCollapse = useCallback(() => {
+    setSidebarCollapsed((prev) => !prev);
   }, []);
 
   return (
@@ -23,7 +28,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex overflow-hidden">
         {/* Desktop sidebar */}
         <div className="hidden md:block">
-          <Sidebar trips={trips} onCreateTrip={handleCreateTrip} />
+          <Sidebar
+            trips={trips}
+            onCreateTrip={handleCreateTrip}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={handleToggleCollapse}
+          />
         </div>
 
         {/* Mobile sidebar sheet */}
