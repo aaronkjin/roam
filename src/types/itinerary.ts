@@ -39,6 +39,8 @@ export interface ItineraryBlock {
   position_index: number;
   ai_generated: boolean;
   source_inspo_id: string | null;
+  rating: number | null;
+  review_note: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -76,6 +78,8 @@ export interface UpdateBlockInput {
   url?: string;
   image_url?: string;
   position_index?: number;
+  rating?: number | null;
+  review_note?: string | null;
 }
 
 export interface GenerationLog {

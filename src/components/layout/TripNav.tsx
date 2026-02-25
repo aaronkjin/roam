@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Sparkles, Lightbulb, PenTool } from "lucide-react";
+import { Sparkles, Lightbulb, PenTool, ClipboardCheck } from "lucide-react";
 
 interface TripNavProps {
   tripId: string;
@@ -13,6 +13,7 @@ const tabs = [
   { label: "Inspo", href: "inspo", icon: Lightbulb },
   { label: "Generate", href: "generate", icon: Sparkles },
   { label: "Itinerary", href: "itinerary", icon: PenTool },
+  { label: "Review", href: "review", icon: ClipboardCheck },
 ];
 
 export function TripNav({ tripId }: TripNavProps) {

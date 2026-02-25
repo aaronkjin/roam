@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import {
   DndContext,
   closestCenter,
@@ -14,7 +14,9 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { useItinerary } from "@/hooks/useItinerary";
+import { useTrips } from "@/context/TripsContext";
 import { DaySection } from "./DaySection";
+import { ShareMenu } from "./ShareMenu";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -38,6 +40,9 @@ export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
     updateDay,
     setDays,
   } = useItinerary(tripId);
+  const { trips } = useTrips();
+  const trip = trips.find((t) => t.id === tripId);
+  const itineraryRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -159,29 +164,43 @@ export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
     <div className="p-6 space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <h2 className="text-base">Your Itinerary</h2>
-        <span className="text-xs text-rock font-[family-name:var(--font-silkscreen)]">
-          {days.length} day{days.length !== 1 ? "s" : ""} &bull;{" "}
-          {days.reduce((sum, d) => sum + d.blocks.length, 0)} blocks
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-rock font-[family-name:var(--font-silkscreen)]">
+            {days.length} day{days.length !== 1 ? "s" : ""} &bull;{" "}
+            {days.reduce((sum, d) => sum + d.blocks.length, 0)} blocks
+          </span>
+          <ShareMenu
+            tripTitle={trip?.title || "My Trip"}
+            tripDestination={trip?.destination}
+            startDate={trip?.start_date}
+            endDate={trip?.end_date}
+            days={days}
+            itineraryRef={itineraryRef}
+          />
+        </div>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        {days.map((day) => (
-          <DaySection
-            key={day.id}
-            day={day}
-            onUpdateDay={updateDay}
-            onUpdateBlock={handleUpdateBlock}
-            onDeleteBlock={handleDeleteBlock}
-            onAddBlock={handleAddBlock}
-            onDeleteDay={handleDeleteDay}
-          />
-        ))}
-      </DndContext>
+      <div ref={itineraryRef}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="space-y-6">
+            {days.map((day) => (
+              <DaySection
+                key={day.id}
+                day={day}
+                onUpdateDay={updateDay}
+                onUpdateBlock={handleUpdateBlock}
+                onDeleteBlock={handleDeleteBlock}
+                onAddBlock={handleAddBlock}
+                onDeleteDay={handleDeleteDay}
+              />
+            ))}
+          </div>
+        </DndContext>
+      </div>
     </div>
   );
 }
