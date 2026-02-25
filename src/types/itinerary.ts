@@ -6,6 +6,18 @@ export type BlockType =
   | "note"
   | "heading";
 
+export type MediaType = "image" | "video";
+
+export interface BlockMedia {
+  id: string;
+  block_id: string;
+  type: MediaType;
+  url: string;
+  storage_path: string;
+  filename: string | null;
+  created_at: string;
+}
+
 export type GenerationMode = "strict" | "creative";
 
 export interface ItineraryDay {

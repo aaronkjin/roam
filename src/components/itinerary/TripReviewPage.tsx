@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTrips } from "@/context/TripsContext";
 import { useItinerary } from "@/hooks/useItinerary";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
 import { StarRating } from "@/components/ui/star-rating";
+import { BlockMediaUpload } from "@/components/itinerary/BlockMediaUpload";
+import type { BlockMedia } from "@/types/itinerary";
 import {
   MapPinned,
   Utensils,
@@ -48,6 +50,62 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
   const [initialized, setInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [blockMedia, setBlockMedia] = useState<Record<string, BlockMedia[]>>({});
+
+  // Fetch all media for this trip's blocks
+  useEffect(() => {
+    if (!tripId || loading || days.length === 0) return;
+    async function fetchMedia() {
+      try {
+        const res = await fetch(`/api/itinerary/media?trip_id=${tripId}`);
+        if (res.ok) {
+          const grouped = await res.json();
+          setBlockMedia(grouped);
+        }
+      } catch {
+        // Silently fail — media is non-critical
+      }
+    }
+    fetchMedia();
+  }, [tripId, loading, days.length]);
+
+  const handleMediaUpload = useCallback(async (blockId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`/api/itinerary/blocks/${blockId}/media`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      console.error("Upload failed:", err.error);
+      return;
+    }
+
+    const newMedia: BlockMedia = await res.json();
+    setBlockMedia((prev) => ({
+      ...prev,
+      [blockId]: [...(prev[blockId] || []), newMedia],
+    }));
+  }, []);
+
+  const handleMediaDelete = useCallback(async (blockId: string, mediaId: string) => {
+    const res = await fetch(`/api/itinerary/blocks/${blockId}/media/${mediaId}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      console.error("Delete failed");
+      return;
+    }
+
+    setBlockMedia((prev) => ({
+      ...prev,
+      [blockId]: (prev[blockId] || []).filter((m) => m.id !== mediaId),
+    }));
+  }, []);
 
   // Initialize state from loaded data once
   if (!initialized && !loading && days.length > 0) {
@@ -232,6 +290,12 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
                       placeholder="Notes on this activity..."
                       rows={1}
                       className="text-xs"
+                    />
+                    <BlockMediaUpload
+                      blockId={block.id}
+                      media={blockMedia[block.id] || []}
+                      onUpload={handleMediaUpload}
+                      onDelete={handleMediaDelete}
                     />
                   </div>
                 );
