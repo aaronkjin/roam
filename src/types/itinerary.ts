@@ -123,6 +123,8 @@ export interface GeneratedBlock {
   end_time?: string;
   duration_minutes?: number;
   location?: string;
+  location_lat?: number;
+  location_lng?: number;
   cost_estimate?: number;
   currency?: string;
 }

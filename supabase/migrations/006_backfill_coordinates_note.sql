@@ -1,0 +1,11 @@
+-- Migration 006: Coordinates backfill
+-- Note: Existing itinerary blocks without coordinates will be automatically
+-- geocoded on-the-fly when the itinerary map loads, via the useGeocoding hook.
+-- The hook calls /api/geocode (Mapbox Geocoding API) for any block that has
+-- location text but missing location_lat/location_lng, then persists the results.
+--
+-- For a one-time bulk backfill, use POST /api/backfill-coords (see route.ts).
+-- That endpoint geocodes all blocks missing coordinates in a single pass.
+--
+-- No schema changes needed — location_lat and location_lng columns already exist.
+SELECT 1;

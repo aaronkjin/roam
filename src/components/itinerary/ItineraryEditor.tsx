@@ -22,13 +22,29 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Sparkles, PenTool } from "lucide-react";
 import Link from "next/link";
-import type { CreateBlockInput, UpdateBlockInput } from "@/types/itinerary";
+import type { CreateBlockInput, UpdateBlockInput, ItineraryDay, ItineraryBlock } from "@/types/itinerary";
+
+type ItineraryHookReturn = ReturnType<typeof useItinerary>;
 
 interface ItineraryEditorProps {
   tripId: string;
+  /** When provided, editor uses external itinerary state (from ItineraryMapLayout) */
+  itinerary?: ItineraryHookReturn;
+  activeDayIndex?: number;
+  onDayClick?: (dayIndex: number) => void;
+  activeBlockId?: string | null;
+  onBlockHover?: (blockId: string | null) => void;
 }
 
-export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
+export function ItineraryEditor({
+  tripId,
+  itinerary: externalItinerary,
+  activeDayIndex,
+  onDayClick,
+  activeBlockId,
+  onBlockHover,
+}: ItineraryEditorProps) {
+  const internalItinerary = useItinerary(externalItinerary ? "" : tripId);
   const {
     days,
     loading,
@@ -39,7 +55,7 @@ export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
     deleteDay,
     updateDay,
     setDays,
-  } = useItinerary(tripId);
+  } = externalItinerary || internalItinerary;
   const { trips } = useTrips();
   const trip = trips.find((t) => t.id === tripId);
   const itineraryRef = useRef<HTMLDivElement>(null);
@@ -128,7 +144,7 @@ export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-4 max-w-3xl mx-auto">
+      <div className="p-6 space-y-4">
         {[1, 2, 3].map((i) => (
           <Skeleton key={i} className="h-64" />
         ))}
@@ -138,7 +154,7 @@ export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
 
   if (days.length === 0) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
+      <div className="p-6">
         <PixelWindow title="No Itinerary Yet" variant="moss">
           <div className="text-center py-8 space-y-4">
             <PenTool className="w-12 h-12 text-moss mx-auto" />
@@ -161,7 +177,7 @@ export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl mx-auto">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-base">Your Itinerary</h2>
         <div className="flex items-center gap-3">
@@ -187,7 +203,7 @@ export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
           onDragEnd={handleDragEnd}
         >
           <div className="space-y-6">
-            {days.map((day) => (
+            {days.map((day, dayIndex) => (
               <DaySection
                 key={day.id}
                 day={day}
@@ -196,6 +212,10 @@ export function ItineraryEditor({ tripId }: ItineraryEditorProps) {
                 onDeleteBlock={handleDeleteBlock}
                 onAddBlock={handleAddBlock}
                 onDeleteDay={handleDeleteDay}
+                isActive={activeDayIndex === dayIndex}
+                onClick={() => onDayClick?.(dayIndex)}
+                activeBlockId={activeBlockId ?? null}
+                onBlockHover={onBlockHover}
               />
             ))}
           </div>

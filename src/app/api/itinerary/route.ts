@@ -78,6 +78,8 @@ export async function POST(req: NextRequest) {
         end_time: block.end_time || null,
         duration_minutes: block.duration_minutes || null,
         location: block.location || null,
+        location_lat: block.location_lat || null,
+        location_lng: block.location_lng || null,
         cost_estimate: block.cost_estimate || null,
         currency: block.currency || "USD",
         position_index: index,

@@ -30,6 +30,8 @@ interface BlockEditorProps {
   block: ItineraryBlock;
   onUpdate: (id: string, input: UpdateBlockInput) => void;
   onDelete: (id: string) => void;
+  isActive?: boolean;
+  onHover?: ((blockId: string | null) => void) | undefined;
 }
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
@@ -41,7 +43,7 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; label
   heading: { icon: Heading, color: "bg-night text-white", label: "Heading" },
 };
 
-export function BlockEditor({ block, onUpdate, onDelete }: BlockEditorProps) {
+export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover }: BlockEditorProps) {
   const [expanded, setExpanded] = useState(false);
   const config = typeConfig[block.type] || typeConfig.activity;
   const Icon = config.icon;
@@ -70,12 +72,15 @@ export function BlockEditor({ block, onUpdate, onDelete }: BlockEditorProps) {
   if (block.type === "heading") {
     return (
       <div
+        id={`block-${block.id}`}
         ref={setNodeRef}
         style={style}
         className={cn(
           "flex items-center gap-2 p-3 bg-night/5 border-[3px] border-night/20",
           isDragging && "opacity-50"
         )}
+        onMouseEnter={() => onHover?.(block.id)}
+        onMouseLeave={() => onHover?.(null)}
       >
         <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5">
           <GripVertical className="w-4 h-4 text-rock" />
@@ -102,13 +107,17 @@ export function BlockEditor({ block, onUpdate, onDelete }: BlockEditorProps) {
 
   return (
     <div
+      id={`block-${block.id}`}
       ref={setNodeRef}
       style={style}
       className={cn(
         "border-[3px] border-night/20 bg-white transition-colors",
         isDragging && "opacity-50 border-jam",
-        expanded && "border-night"
+        expanded && "border-night",
+        isActive && "border-jam bg-jam/5"
       )}
+      onMouseEnter={() => onHover?.(block.id)}
+      onMouseLeave={() => onHover?.(null)}
     >
       {/* Compact view */}
       <div className="flex items-center gap-2 p-2">

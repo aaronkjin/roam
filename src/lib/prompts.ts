@@ -18,6 +18,8 @@ Your output must be valid JSON matching this schema:
           "end_time": "11:30",
           "duration_minutes": 150,
           "location": "Grand Bazaar, Istanbul",
+          "location_lat": 41.0106,
+          "location_lng": 28.9684,
           "cost_estimate": 0,
           "currency": "USD"
         }
@@ -31,6 +33,8 @@ Guidelines:
 - Include a mix of activities, food, and transport
 - Start each day with a "heading" block for the day theme
 - Be specific with times, locations, and cost estimates
+- The "location" field must be the specific place name with city (e.g., "Kinkaku-ji, Kyoto" not just "Kinkaku-ji")
+- CRITICAL: location_lat and location_lng must be precise GPS coordinates for the EXACT venue or landmark. Use coordinates you are confident about — for example, Namsan Seoul Tower is at 37.5512, 126.9882 (not a generic city center). If you are unsure of exact coordinates for a specific restaurant or shop, use the coordinates of the nearest well-known landmark or intersection. Never default to generic city-center coordinates.
 - Descriptions should be 1-3 sentences, vivid and helpful
 - Cost estimates in USD unless specified
 - Always output ONLY the JSON, no markdown or extra text`;
