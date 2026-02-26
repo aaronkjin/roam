@@ -83,16 +83,28 @@ export function DaySection({
             strategy={verticalListSortingStrategy}
           >
             <div className="space-y-2">
-              {day.blocks.map((block) => (
-                <BlockEditor
-                  key={block.id}
-                  block={block}
-                  onUpdate={onUpdateBlock}
-                  onDelete={onDeleteBlock}
-                  isActive={activeBlockId === block.id}
-                  onHover={onBlockHover}
-                />
-              ))}
+              {(() => {
+                let pinIndex = 0;
+                return day.blocks.map((block) => {
+                  const isMappable =
+                    block.location_lat &&
+                    block.location_lng &&
+                    block.type !== "heading" &&
+                    block.type !== "note";
+                  if (isMappable) pinIndex++;
+                  return (
+                    <BlockEditor
+                      key={block.id}
+                      block={block}
+                      onUpdate={onUpdateBlock}
+                      onDelete={onDeleteBlock}
+                      isActive={activeBlockId === block.id}
+                      onHover={onBlockHover}
+                      mapIndex={isMappable ? pinIndex : undefined}
+                    />
+                  );
+                });
+              })()}
             </div>
           </SortableContext>
 

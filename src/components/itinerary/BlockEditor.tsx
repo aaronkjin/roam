@@ -32,6 +32,8 @@ interface BlockEditorProps {
   onDelete: (id: string) => void;
   isActive?: boolean;
   onHover?: ((blockId: string | null) => void) | undefined;
+  /** Map pin number (only set for blocks that appear on the map) */
+  mapIndex?: number;
 }
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
@@ -43,7 +45,7 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; label
   heading: { icon: Heading, color: "bg-night text-white", label: "Heading" },
 };
 
-export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover }: BlockEditorProps) {
+export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapIndex }: BlockEditorProps) {
   const [expanded, setExpanded] = useState(false);
   const config = typeConfig[block.type] || typeConfig.activity;
   const Icon = config.icon;
@@ -124,6 +126,17 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover }: Bl
         <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5">
           <GripVertical className="w-4 h-4 text-rock" />
         </button>
+
+        {mapIndex != null && (
+          <div
+            className={cn(
+              "flex items-center justify-center w-6 h-6 border-[2px] border-night shrink-0 font-[family-name:var(--font-silkscreen)] text-[10px] font-bold leading-none",
+              config.color
+            )}
+          >
+            {mapIndex}
+          </div>
+        )}
 
         <Badge className={cn("text-[9px] shrink-0", config.color)}>
           <Icon className="w-3 h-3 mr-1" />
