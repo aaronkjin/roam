@@ -1,6 +1,6 @@
 # Roam
 
-An idea-curation, travel-planning web app.
+An idea-curation, travel-planning web app
 
 ![Demo](docs/demo.gif)
 
