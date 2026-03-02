@@ -11,15 +11,18 @@ import { Plus, Compass } from "lucide-react";
 import type { Trip } from "@/types/trip";
 
 export default function DashboardPage() {
-  const { trips, loading, updateTrip } = useTrips();
+  const { ownTrips, sharedTrips, loading, updateTrip } = useTrips();
   const [createOpen, setCreateOpen] = useState(false);
   const [editTrip, setEditTrip] = useState<Trip | null>(null);
 
-  const activeTrips = trips.filter(
+  const activeTrips = ownTrips.filter(
     (t) => t.status !== "completed" && t.status !== "archived"
   );
-  const pastTrips = trips.filter(
+  const pastTrips = ownTrips.filter(
     (t) => t.status === "completed" || t.status === "archived"
+  );
+  const activeShared = sharedTrips.filter(
+    (t) => t.status !== "completed" && t.status !== "archived"
   );
 
   return (
@@ -34,7 +37,7 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        {!loading && activeTrips.length === 0 && pastTrips.length === 0 ? (
+        {!loading && activeTrips.length === 0 && pastTrips.length === 0 && activeShared.length === 0 ? (
           <PixelWindow title="Welcome to Roam!" variant="jam">
             <div className="text-center py-8 space-y-4">
               <Compass className="w-16 h-16 text-jam mx-auto" />
@@ -57,6 +60,14 @@ export default function DashboardPage() {
           <TripList trips={activeTrips} loading={loading} onEditTrip={setEditTrip} />
         )}
       </div>
+
+      {/* Shared with me */}
+      {(loading || activeShared.length > 0) && activeShared.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-base">Shared with Me</h2>
+          <TripList trips={activeShared} loading={loading} onEditTrip={setEditTrip} />
+        </div>
+      )}
 
       {/* Past trips */}
       {(loading || pastTrips.length > 0) && (

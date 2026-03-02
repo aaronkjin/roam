@@ -17,26 +17,30 @@ import {
   Archive,
   ChevronLeft,
   ChevronRight,
+  Users,
 } from "lucide-react";
-import type { Trip } from "@/types/trip";
+import type { TripWithRole } from "@/types/trip";
 
 interface SidebarProps {
-  trips: Trip[];
+  ownTrips: TripWithRole[];
+  sharedTrips: TripWithRole[];
   onCreateTrip: () => void;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
 }
 
 export function Sidebar({
-  trips,
+  ownTrips,
+  sharedTrips,
   onCreateTrip,
   collapsed = false,
   onToggleCollapse,
 }: SidebarProps) {
   const pathname = usePathname();
 
-  const activeTrips = trips.filter((t) => t.status !== "archived");
-  const archivedTrips = trips.filter((t) => t.status === "archived");
+  const activeOwn = ownTrips.filter((t) => t.status !== "archived");
+  const archivedOwn = ownTrips.filter((t) => t.status === "archived");
+  const activeShared = sharedTrips.filter((t) => t.status !== "archived");
 
   return (
     <aside
@@ -106,17 +110,18 @@ export function Sidebar({
           </Link>
         )}
 
+        {/* My Trips section */}
         {!collapsed && (
           <div className="mt-4 mb-2 px-3">
             <span className="text-[10px] font-[family-name:var(--font-press-start)] text-rock uppercase">
-              Trips
+              My Trips
             </span>
           </div>
         )}
 
         {collapsed && <div className="mt-4" />}
 
-        {activeTrips.map((trip) => {
+        {activeOwn.map((trip) => {
           const isActive = pathname.startsWith(`/trip/${trip.id}`);
           return collapsed ? (
             <Tooltip key={trip.id}>
@@ -152,13 +157,63 @@ export function Sidebar({
           );
         })}
 
-        {activeTrips.length === 0 && !collapsed && (
+        {activeOwn.length === 0 && !collapsed && (
           <p className="px-3 py-2 text-xs text-rock font-[family-name:var(--font-silkscreen)]">
             No trips yet. Start exploring!
           </p>
         )}
 
-        {archivedTrips.length > 0 && (
+        {/* Shared section */}
+        {activeShared.length > 0 && (
+          <>
+            {!collapsed && (
+              <div className="mt-4 mb-2 px-3">
+                <span className="text-[10px] font-[family-name:var(--font-press-start)] text-rock uppercase">
+                  Shared
+                </span>
+              </div>
+            )}
+            {collapsed && <div className="mt-4" />}
+            {activeShared.map((trip) => {
+              const isActive = pathname.startsWith(`/trip/${trip.id}`);
+              return collapsed ? (
+                <Tooltip key={trip.id}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={`/trip/${trip.id}`}
+                      className={cn(
+                        "flex items-center justify-center p-2 transition-colors border-[2px] border-transparent mb-1",
+                        isActive
+                          ? "bg-mist border-night text-night"
+                          : "text-rock hover:text-night hover:bg-sky/20"
+                      )}
+                    >
+                      <Users className="w-4 h-4" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{trip.title}</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Link
+                  key={trip.id}
+                  href={`/trip/${trip.id}`}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 text-sm font-[family-name:var(--font-roboto-mono)] transition-colors border-[2px] border-transparent mb-1",
+                    isActive
+                      ? "bg-mist border-night text-night"
+                      : "text-rock hover:text-night hover:bg-sky/20"
+                  )}
+                >
+                  <Users className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">{trip.title}</span>
+                </Link>
+              );
+            })}
+          </>
+        )}
+
+        {/* Archived section */}
+        {archivedOwn.length > 0 && (
           <>
             {!collapsed && (
               <div className="mt-4 mb-2 px-3">
@@ -168,7 +223,7 @@ export function Sidebar({
               </div>
             )}
             {collapsed && <div className="mt-4" />}
-            {archivedTrips.map((trip) =>
+            {archivedOwn.map((trip) =>
               collapsed ? (
                 <Tooltip key={trip.id}>
                   <TooltipTrigger asChild>
@@ -196,7 +251,6 @@ export function Sidebar({
         )}
       </nav>
 
-      {/* Collapse/expand toggle — only shown when handler is provided (desktop) */}
       {onToggleCollapse && (
         <>
           <Separator />

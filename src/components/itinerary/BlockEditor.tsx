@@ -34,6 +34,7 @@ interface BlockEditorProps {
   onHover?: ((blockId: string | null) => void) | undefined;
   /** Map pin number (only set for blocks that appear on the map) */
   mapIndex?: number;
+  canEdit?: boolean;
 }
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
@@ -45,7 +46,7 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; label
   heading: { icon: Heading, color: "bg-night text-white", label: "Heading" },
 };
 
-export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapIndex }: BlockEditorProps) {
+export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapIndex, canEdit = true }: BlockEditorProps) {
   const [expanded, setExpanded] = useState(false);
   const config = typeConfig[block.type] || typeConfig.activity;
   const Icon = config.icon;
@@ -84,9 +85,11 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
         onMouseEnter={() => onHover?.(block.id)}
         onMouseLeave={() => onHover?.(null)}
       >
-        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5">
-          <GripVertical className="w-4 h-4 text-rock" />
-        </button>
+        {canEdit && (
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5">
+            <GripVertical className="w-4 h-4 text-rock" />
+          </button>
+        )}
         <Heading className="w-4 h-4 text-night" />
         <input
           type="text"
@@ -94,15 +97,18 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
           onChange={(e) => handleFieldChange("title", e.target.value)}
           className="flex-1 bg-transparent font-[family-name:var(--font-silkscreen)] text-sm text-night uppercase outline-none"
           placeholder="Section heading..."
+          readOnly={!canEdit}
         />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onDelete(block.id)}
-          className="h-6 w-6 text-rock hover:text-destructive"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </Button>
+        {canEdit && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(block.id)}
+            className="h-6 w-6 text-rock hover:text-destructive"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        )}
       </div>
     );
   }
@@ -123,9 +129,11 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
     >
       {/* Compact view */}
       <div className="flex items-center gap-2 p-2">
-        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5">
-          <GripVertical className="w-4 h-4 text-rock" />
-        </button>
+        {canEdit && (
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5">
+            <GripVertical className="w-4 h-4 text-rock" />
+          </button>
+        )}
 
         {mapIndex != null && (
           <div
@@ -149,6 +157,7 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
           onChange={(e) => handleFieldChange("title", e.target.value)}
           className="flex-1 text-sm text-night bg-transparent outline-none min-w-0"
           placeholder="Block title..."
+          readOnly={!canEdit}
         />
 
         {block.ai_generated && (
@@ -172,14 +181,16 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
           )}
         </button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onDelete(block.id)}
-          className="h-6 w-6 text-rock hover:text-destructive"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </Button>
+        {canEdit && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(block.id)}
+            className="h-6 w-6 text-rock hover:text-destructive"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        )}
       </div>
 
       {/* Expanded details */}
@@ -195,6 +206,7 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
               placeholder="Details about this block..."
               rows={2}
               className="mt-1 text-xs"
+              readOnly={!canEdit}
             />
           </div>
 
@@ -208,6 +220,7 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
                 value={block.start_time || ""}
                 onChange={(e) => handleFieldChange("start_time", e.target.value)}
                 className="mt-1 text-xs"
+                readOnly={!canEdit}
               />
             </div>
             <div>
@@ -219,6 +232,7 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
                 value={block.end_time || ""}
                 onChange={(e) => handleFieldChange("end_time", e.target.value)}
                 className="mt-1 text-xs"
+                readOnly={!canEdit}
               />
             </div>
             <div>
@@ -236,6 +250,7 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
                 }
                 placeholder="0"
                 className="mt-1 text-xs"
+                readOnly={!canEdit}
               />
             </div>
           </div>
@@ -249,6 +264,7 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
               onChange={(e) => handleFieldChange("location", e.target.value)}
               placeholder="Where is this?"
               className="mt-1 text-xs"
+              readOnly={!canEdit}
             />
           </div>
         </div>

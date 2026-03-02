@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuth, requireTripAccess } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = await createClient();
   const tripId = req.nextUrl.searchParams.get("trip_id");
 
   if (!tripId) {
     return NextResponse.json({ error: "trip_id is required" }, { status: 400 });
+  }
+
+  const access = await requireTripAccess(authResult.userId, tripId, "viewer");
+  if (!access) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { data, error } = await supabase
@@ -23,11 +34,21 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = await createClient();
   const body = await req.json();
 
   if (!body.trip_id) {
     return NextResponse.json({ error: "trip_id is required" }, { status: 400 });
+  }
+
+  const access = await requireTripAccess(authResult.userId, body.trip_id, "editor");
+  if (!access) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   // Get max position_index for this trip

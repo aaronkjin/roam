@@ -36,3 +36,9 @@ export interface UpdateTripInput {
   overall_rating?: number;
   review_note?: string;
 }
+
+export type CollaboratorRole = "owner" | "editor" | "viewer";
+
+export interface TripWithRole extends Trip {
+  userRole: CollaboratorRole;
+}

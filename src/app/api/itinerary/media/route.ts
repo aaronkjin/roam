@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuth, requireTripAccess } from "@/lib/auth";
 
 // GET all media for a trip's blocks (batch fetch)
 export async function GET(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = await createClient();
   const tripId = req.nextUrl.searchParams.get("trip_id");
 
   if (!tripId) {
     return NextResponse.json({ error: "trip_id is required" }, { status: 400 });
+  }
+
+  const access = await requireTripAccess(authResult.userId, tripId, "viewer");
+  if (!access) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   // Get all block IDs for this trip

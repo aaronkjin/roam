@@ -1,23 +1,29 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import type { Trip, CreateTripInput, UpdateTripInput } from "@/types/trip";
+import type { Trip, TripWithRole, CreateTripInput, UpdateTripInput } from "@/types/trip";
 
 interface TripsContextValue {
-  trips: Trip[];
+  trips: TripWithRole[];
+  ownTrips: TripWithRole[];
+  sharedTrips: TripWithRole[];
   loading: boolean;
   error: string | null;
   fetchTrips: () => Promise<void>;
   createTrip: (input: CreateTripInput) => Promise<Trip | null>;
   updateTrip: (id: string, input: UpdateTripInput) => Promise<Trip | null>;
+  acceptInvite: (tripId: string) => Promise<boolean>;
 }
 
 const TripsContext = createContext<TripsContextValue | null>(null);
 
 export function TripsProvider({ children }: { children: React.ReactNode }) {
-  const [trips, setTrips] = useState<Trip[]>([]);
+  const [ownTrips, setOwnTrips] = useState<TripWithRole[]>([]);
+  const [sharedTrips, setSharedTrips] = useState<TripWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const trips = [...ownTrips, ...sharedTrips];
 
   const fetchTrips = useCallback(async () => {
     try {
@@ -25,7 +31,15 @@ export function TripsProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/trips");
       if (!res.ok) throw new Error("Failed to fetch trips");
       const data = await res.json();
-      setTrips(data);
+
+      // Support both new { ownTrips, sharedTrips } and legacy array format
+      if (data.ownTrips && data.sharedTrips) {
+        setOwnTrips(data.ownTrips);
+        setSharedTrips(data.sharedTrips);
+      } else if (Array.isArray(data)) {
+        setOwnTrips(data.map((t: Trip) => ({ ...t, userRole: "owner" as const })));
+        setSharedTrips([]);
+      }
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -47,7 +61,8 @@ export function TripsProvider({ children }: { children: React.ReactNode }) {
       });
       if (!res.ok) throw new Error("Failed to create trip");
       const trip = await res.json();
-      setTrips((prev) => [trip, ...prev]);
+      const tripWithRole: TripWithRole = { ...trip, userRole: "owner" };
+      setOwnTrips((prev) => [tripWithRole, ...prev]);
       return trip;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -64,7 +79,13 @@ export function TripsProvider({ children }: { children: React.ReactNode }) {
       });
       if (!res.ok) throw new Error("Failed to update trip");
       const updated = await res.json();
-      setTrips((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      // Update in whichever list contains the trip
+      setOwnTrips((prev) =>
+        prev.map((t) => (t.id === id ? { ...updated, userRole: t.userRole } : t))
+      );
+      setSharedTrips((prev) =>
+        prev.map((t) => (t.id === id ? { ...updated, userRole: t.userRole } : t))
+      );
       return updated;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -72,8 +93,35 @@ export function TripsProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const acceptInvite = useCallback(async (tripId: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/trips/${tripId}/collaborators/accept`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to accept invite");
+      // Refresh trips to get updated accepted_at
+      await fetchTrips();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+      return false;
+    }
+  }, [fetchTrips]);
+
   return (
-    <TripsContext.Provider value={{ trips, loading, error, fetchTrips, createTrip, updateTrip }}>
+    <TripsContext.Provider
+      value={{
+        trips,
+        ownTrips,
+        sharedTrips,
+        loading,
+        error,
+        fetchTrips,
+        createTrip,
+        updateTrip,
+        acceptInvite,
+      }}
+    >
       {children}
     </TripsContext.Provider>
   );

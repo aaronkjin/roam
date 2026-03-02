@@ -27,13 +27,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Sparkles } from "lucide-react";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
 import type { InspoItem, InspoType } from "@/types/inspo";
+import type { TripWithRole } from "@/types/trip";
 import Link from "next/link";
+import { useTrips } from "@/context/TripsContext";
 
 interface InspoBoardProps {
   tripId: string;
 }
 
 export function InspoBoard({ tripId }: InspoBoardProps) {
+  const { trips } = useTrips();
+  const trip = trips.find((t) => t.id === tripId);
+  const userRole = trip && "userRole" in trip ? (trip as TripWithRole).userRole : "owner";
+  const canEdit = userRole === "owner" || userRole === "editor";
   const { items, loading, addItem, updateItem, deleteItem, reorderItems } =
     useInspoItems(tripId);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -122,15 +128,17 @@ export function InspoBoard({ tripId }: InspoBoardProps) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <InspoFilters activeFilter={filter} onFilterChange={setFilter} />
         <div className="flex gap-2">
-          <Button
-            onClick={() => setAddModalOpen(true)}
-            size="sm"
-            className="bg-[#2D6A4F] hover:bg-[#245A42] text-white"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Inspo
-          </Button>
-          {items.length > 0 && (
+          {canEdit && (
+            <Button
+              onClick={() => setAddModalOpen(true)}
+              size="sm"
+              className="bg-[#2D6A4F] hover:bg-[#245A42] text-white"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Inspo
+            </Button>
+          )}
+          {canEdit && items.length > 0 && (
             <Button
               asChild
               size="sm"
@@ -160,6 +168,7 @@ export function InspoBoard({ tripId }: InspoBoardProps) {
                   item={item}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  canEdit={canEdit}
                 />
               ))}
             </div>

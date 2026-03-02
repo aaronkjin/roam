@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth";
 
 /**
  * Strip activity prefixes from block titles to extract the actual place name.
@@ -31,6 +32,11 @@ function stripActivityPrefix(title: string): string {
 // POST /api/backfill-coords — Bulk geocode for blocks missing coordinates
 // Add ?force=true to clear existing coords and re-geocode everything
 export async function POST(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = await createClient();
   const token = process.env.MAPBOX_SECRET_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const force = req.nextUrl.searchParams.get("force") === "true";

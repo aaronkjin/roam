@@ -58,6 +58,8 @@ export function ItineraryEditor({
   } = externalItinerary || internalItinerary;
   const { trips } = useTrips();
   const trip = trips.find((t) => t.id === tripId);
+  const userRole = trip && "userRole" in trip ? (trip as import("@/types/trip").TripWithRole).userRole : "owner";
+  const canEdit = userRole === "owner" || userRole === "editor";
   const itineraryRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
@@ -186,12 +188,14 @@ export function ItineraryEditor({
             {days.reduce((sum, d) => sum + d.blocks.length, 0)} blocks
           </span>
           <ShareMenu
+            tripId={tripId}
             tripTitle={trip?.title || "My Trip"}
             tripDestination={trip?.destination}
             startDate={trip?.start_date}
             endDate={trip?.end_date}
             days={days}
             itineraryRef={itineraryRef}
+            userRole={trip && "userRole" in trip ? (trip as import("@/types/trip").TripWithRole).userRole : "owner"}
           />
         </div>
       </div>
@@ -216,6 +220,7 @@ export function ItineraryEditor({
                 onClick={() => onDayClick?.(dayIndex)}
                 activeBlockId={activeBlockId ?? null}
                 onBlockHover={onBlockHover}
+                canEdit={canEdit}
               />
             ))}
           </div>

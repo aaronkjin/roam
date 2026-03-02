@@ -11,7 +11,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const { trips } = useTrips();
+  const { ownTrips, sharedTrips } = useTrips();
 
   const handleCreateTrip = useCallback(() => {
     setCreateModalOpen(true);
@@ -29,7 +29,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Desktop sidebar */}
         <div className="hidden md:block">
           <Sidebar
-            trips={trips}
+            ownTrips={ownTrips}
+            sharedTrips={sharedTrips}
             onCreateTrip={handleCreateTrip}
             collapsed={sidebarCollapsed}
             onToggleCollapse={handleToggleCollapse}
@@ -39,7 +40,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Mobile sidebar sheet */}
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent side="left" className="p-0 w-64">
-            <Sidebar trips={trips} onCreateTrip={handleCreateTrip} />
+            <Sidebar
+              ownTrips={ownTrips}
+              sharedTrips={sharedTrips}
+              onCreateTrip={handleCreateTrip}
+            />
           </SheetContent>
         </Sheet>
 

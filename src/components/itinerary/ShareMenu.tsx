@@ -6,18 +6,23 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Share2, FileText, Image, Check, Loader2 } from "lucide-react";
+import { Share2, FileText, Image, Check, Loader2, Users, Link as LinkIcon } from "lucide-react";
+import { InviteDialog } from "./InviteDialog";
 import type { ItineraryDay, ItineraryBlock } from "@/types/itinerary";
+import type { CollaboratorRole } from "@/types/trip";
 
 interface ShareMenuProps {
+  tripId: string;
   tripTitle: string;
   tripDestination?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   days: (ItineraryDay & { blocks: ItineraryBlock[] })[];
   itineraryRef?: React.RefObject<HTMLDivElement | null>;
+  userRole?: CollaboratorRole;
 }
 
 const typeEmoji: Record<string, string> = {
@@ -77,15 +82,21 @@ function formatItineraryAsText(
 }
 
 export function ShareMenu({
+  tripId,
   tripTitle,
   tripDestination,
   startDate,
   endDate,
   days,
   itineraryRef,
+  userRole = "owner",
 }: ShareMenuProps) {
   const [textCopied, setTextCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+
+  const isOwner = userRole === "owner";
 
   const handleCopyText = useCallback(async () => {
     setLoading("text");
@@ -127,34 +138,79 @@ export function ShareMenu({
     }
   }, [itineraryRef, tripTitle]);
 
+  const handleCopyPublicLink = useCallback(async () => {
+    setLoading("link");
+    try {
+      const res = await fetch(`/api/trips/${tripId}/share`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to generate share link");
+      const data = await res.json();
+      await navigator.clipboard.writeText(data.share_url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy public link:", err);
+    } finally {
+      setLoading(null);
+    }
+  }, [tripId]);
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
-          <Share2 className="w-3.5 h-3.5" />
-          Share
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onClick={handleCopyText} disabled={loading === "text"}>
-          {loading === "text" ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : textCopied ? (
-            <Check className="w-4 h-4 mr-2 text-moss" />
-          ) : (
-            <FileText className="w-4 h-4 mr-2" />
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <Share2 className="w-3.5 h-3.5" />
+            Share
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          {isOwner && (
+            <>
+              <DropdownMenuItem onClick={() => setInviteOpen(true)}>
+                <Users className="w-4 h-4 mr-2" />
+                Invite Collaborator
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCopyPublicLink} disabled={loading === "link"}>
+                {loading === "link" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : linkCopied ? (
+                  <Check className="w-4 h-4 mr-2 text-moss" />
+                ) : (
+                  <LinkIcon className="w-4 h-4 mr-2" />
+                )}
+                {linkCopied ? "Link Copied!" : "Copy Public Link"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
           )}
-          {textCopied ? "Text Copied!" : "Copy as Text"}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleDownloadImage} disabled={loading === "image"}>
-          {loading === "image" ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Image className="w-4 h-4 mr-2" />
-          )}
-          Download as Image
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuItem onClick={handleCopyText} disabled={loading === "text"}>
+            {loading === "text" ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : textCopied ? (
+              <Check className="w-4 h-4 mr-2 text-moss" />
+            ) : (
+              <FileText className="w-4 h-4 mr-2" />
+            )}
+            {textCopied ? "Text Copied!" : "Copy as Text"}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleDownloadImage} disabled={loading === "image"}>
+            {loading === "image" ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Image className="w-4 h-4 mr-2" />
+            )}
+            Download as Image
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {isOwner && (
+        <InviteDialog
+          tripId={tripId}
+          open={inviteOpen}
+          onOpenChange={setInviteOpen}
+        />
+      )}
+    </>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+import { SignedIn, SignedOut, UserButton, SignInButton } from "@clerk/nextjs";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -32,9 +33,23 @@ export function Header({ onToggleSidebar }: HeaderProps) {
         </h1>
       </Link>
       <div className="flex-1" />
-      <div className="hidden sm:flex items-center gap-2 text-xs text-rock font-[family-name:var(--font-silkscreen)]">
-        Travel Planning for Adventurers
-      </div>
+      <SignedIn>
+        <UserButton
+          appearance={{
+            elements: {
+              avatarBox: "w-8 h-8 border-[2px] border-night",
+              userButtonTrigger: "border-[2px] border-night",
+            },
+          }}
+        />
+      </SignedIn>
+      <SignedOut>
+        <SignInButton>
+          <Button size="sm" className="bg-jam text-white">
+            Sign In
+          </Button>
+        </SignInButton>
+      </SignedOut>
     </header>
   );
 }

@@ -2,14 +2,31 @@ import { NextRequest } from "next/server";
 import { openai } from "@/lib/openai";
 import { SYSTEM_PROMPT, buildStrictPrompt, buildCreativePrompt } from "@/lib/prompts";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuth, requireTripAccess } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const body = await req.json();
   const { trip_id, mode = "creative", num_days = 3, selected_inspo_ids, start_date, end_date, stay_address } = body;
 
   if (!trip_id) {
     return new Response(JSON.stringify({ error: "trip_id is required" }), {
       status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const access = await requireTripAccess(authResult.userId, trip_id, "editor");
+  if (!access) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
       headers: { "Content-Type": "application/json" },
     });
   }

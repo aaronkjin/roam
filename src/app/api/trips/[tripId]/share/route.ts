@@ -1,12 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { randomBytes } from "crypto";
+import { requireAuth, requireTripAccess } from "@/lib/auth";
 
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
+
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { userId } = authResult;
+
+  const access = await requireTripAccess(userId, tripId, "owner");
+  if (!access) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const supabase = await createClient();
 
   // Check if trip exists and if it already has a share token

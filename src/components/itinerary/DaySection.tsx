@@ -22,6 +22,7 @@ interface DaySectionProps {
   onClick?: () => void;
   activeBlockId?: string | null;
   onBlockHover?: ((blockId: string | null) => void) | undefined;
+  canEdit?: boolean;
 }
 
 export function DaySection({
@@ -35,6 +36,7 @@ export function DaySection({
   onClick,
   activeBlockId,
   onBlockHover,
+  canEdit = true,
 }: DaySectionProps) {
   const handleAddBlock = useCallback(
     (type: BlockType) => {
@@ -52,7 +54,7 @@ export function DaySection({
       <PixelWindow
         title={`Day ${day.day_number}${day.title ? ` — ${day.title}` : ""}`}
         variant={isActive ? "jam" : "mist"}
-        onClose={() => onDeleteDay(day.id)}
+        onClose={canEdit ? () => onDeleteDay(day.id) : undefined}
       >
         <div className="space-y-3">
           {/* Day header - editable */}
@@ -64,6 +66,7 @@ export function DaySection({
               onClick={(e) => e.stopPropagation()}
               className="w-full bg-transparent text-sm font-bold text-night outline-none"
               placeholder="Day title..."
+              readOnly={!canEdit}
             />
             <input
               type="text"
@@ -72,6 +75,7 @@ export function DaySection({
               onClick={(e) => e.stopPropagation()}
               className="w-full bg-transparent text-xs text-rock outline-none"
               placeholder="Brief summary of the day..."
+              readOnly={!canEdit}
             />
           </div>
 
@@ -101,6 +105,7 @@ export function DaySection({
                       isActive={activeBlockId === block.id}
                       onHover={onBlockHover}
                       mapIndex={isMappable ? pinIndex : undefined}
+                      canEdit={canEdit}
                     />
                   );
                 });
@@ -109,9 +114,11 @@ export function DaySection({
           </SortableContext>
 
           {/* Add block */}
-          <div className="flex justify-center pt-2">
-            <BlockToolbar onAddBlock={handleAddBlock} />
-          </div>
+          {canEdit && (
+            <div className="flex justify-center pt-2">
+              <BlockToolbar onAddBlock={handleAddBlock} />
+            </div>
+          )}
         </div>
       </PixelWindow>
     </div>

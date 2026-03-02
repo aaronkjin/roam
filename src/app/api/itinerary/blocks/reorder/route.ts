@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuth, requireTripAccess, resolveTripId } from "@/lib/auth";
 
 export async function PUT(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = await createClient();
   const body = await req.json();
   const { blocks } = body;
@@ -11,6 +17,16 @@ export async function PUT(req: NextRequest) {
       { error: "blocks array is required" },
       { status: 400 }
     );
+  }
+
+  const tripId = await resolveTripId("block", blocks[0].id);
+  if (!tripId) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const access = await requireTripAccess(authResult.userId, tripId, "editor");
+  if (!access) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   // Update each block's position_index and optionally day_id

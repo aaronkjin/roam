@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuth, requireTripAccess } from "@/lib/auth";
 
 // GET itinerary for a trip (days + blocks)
 export async function GET(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = await createClient();
   const tripId = req.nextUrl.searchParams.get("trip_id");
 
   if (!tripId) {
     return NextResponse.json({ error: "trip_id is required" }, { status: 400 });
+  }
+
+  const access = await requireTripAccess(authResult.userId, tripId, "viewer");
+  if (!access) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { data: days, error } = await supabase
@@ -37,6 +48,11 @@ export async function GET(req: NextRequest) {
 
 // POST create itinerary from generated data
 export async function POST(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = await createClient();
   const body = await req.json();
   const { trip_id, days } = body;
@@ -46,6 +62,11 @@ export async function POST(req: NextRequest) {
       { error: "trip_id and days are required" },
       { status: 400 }
     );
+  }
+
+  const access = await requireTripAccess(authResult.userId, trip_id, "editor");
+  if (!access) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   // Delete existing itinerary for this trip

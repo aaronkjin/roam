@@ -18,6 +18,7 @@ interface InspoCardProps {
   item: InspoItem;
   onEdit: (item: InspoItem) => void;
   onDelete: (id: string) => void;
+  canEdit?: boolean;
 }
 
 const typeIcons = {
@@ -36,7 +37,7 @@ const typeColors = {
   note: "bg-mist",
 };
 
-export function InspoCard({ item, onEdit, onDelete }: InspoCardProps) {
+export function InspoCard({ item, onEdit, onDelete, canEdit = true }: InspoCardProps) {
   const TypeIcon = typeIcons[item.type];
 
   const {
@@ -62,12 +63,14 @@ export function InspoCard({ item, onEdit, onDelete }: InspoCardProps) {
     >
       {/* Card header bar */}
       <div
-        className="flex items-center justify-between px-3 py-1.5 bg-night text-white cursor-grab active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
+        className={cn(
+          "flex items-center justify-between px-3 py-1.5 bg-night text-white",
+          canEdit && "cursor-grab active:cursor-grabbing"
+        )}
+        {...(canEdit ? { ...attributes, ...listeners } : {})}
       >
         <div className="flex items-center gap-2">
-          <GripVertical className="w-3 h-3 opacity-50" />
+          {canEdit && <GripVertical className="w-3 h-3 opacity-50" />}
           <TypeIcon className="w-3.5 h-3.5" />
           <span className="text-[10px] font-[family-name:var(--font-silkscreen)] uppercase">
             {item.type}
@@ -83,10 +86,12 @@ export function InspoCard({ item, onEdit, onDelete }: InspoCardProps) {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(item)}>
-              <Edit2 className="w-3.5 h-3.5 mr-2" />
-              Edit
-            </DropdownMenuItem>
+            {canEdit && (
+              <DropdownMenuItem onClick={() => onEdit(item)}>
+                <Edit2 className="w-3.5 h-3.5 mr-2" />
+                Edit
+              </DropdownMenuItem>
+            )}
             {item.url && (
               <DropdownMenuItem asChild>
                 <a href={item.url} target="_blank" rel="noopener noreferrer">
@@ -95,13 +100,15 @@ export function InspoCard({ item, onEdit, onDelete }: InspoCardProps) {
                 </a>
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem
-              onClick={() => onDelete(item.id)}
-              className="text-destructive"
-            >
-              <Trash2 className="w-3.5 h-3.5 mr-2" />
-              Delete
-            </DropdownMenuItem>
+            {canEdit && (
+              <DropdownMenuItem
+                onClick={() => onDelete(item.id)}
+                className="text-destructive"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

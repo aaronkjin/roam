@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Edit2 } from "lucide-react";
-import type { Trip } from "@/types/trip";
+import type { Trip, TripWithRole } from "@/types/trip";
 import { getProxiedImageUrl } from "@/lib/image-proxy";
 
 interface TripCardProps {
@@ -20,22 +20,37 @@ const statusColors: Record<string, string> = {
   completed: "bg-jam text-white",
 };
 
+const roleColors: Record<string, string> = {
+  editor: "bg-grass text-night",
+  viewer: "bg-sky text-night",
+};
+
+function isTripWithRole(trip: Trip): trip is TripWithRole {
+  return "userRole" in trip;
+}
+
 export function TripCard({ trip, onEdit }: TripCardProps) {
+  const userRole = isTripWithRole(trip) ? trip.userRole : "owner";
+  const canEdit = userRole === "owner" || userRole === "editor";
+  const isShared = userRole !== "owner";
+
   return (
     <div className="border-[3px] border-night bg-white pixel-shadow pixel-shadow-hover h-full relative group">
-      {/* Edit button - top right, appears on hover */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute top-2 right-2 z-10 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity bg-white"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onEdit(trip);
-        }}
-      >
-        <Edit2 className="w-3.5 h-3.5" />
-      </Button>
+      {/* Edit button - top right, appears on hover (only for owner/editor) */}
+      {canEdit && (
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute top-2 right-2 z-10 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity bg-white"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onEdit(trip);
+          }}
+        >
+          <Edit2 className="w-3.5 h-3.5" />
+        </Button>
+      )}
 
       <Link href={`/trip/${trip.id}/inspo`} className="block p-4 space-y-3">
         {/* Cover image or placeholder */}
@@ -58,9 +73,16 @@ export function TripCard({ trip, onEdit }: TripCardProps) {
             <h4 className="text-sm font-bold text-night line-clamp-1">
               {trip.title}
             </h4>
-            <Badge className={`text-[9px] shrink-0 ${statusColors[trip.status] || statusColors.planning}`}>
-              {trip.status}
-            </Badge>
+            <div className="flex items-center gap-1 shrink-0">
+              {isShared && (
+                <Badge className={`text-[9px] ${roleColors[userRole] || ""}`}>
+                  {userRole}
+                </Badge>
+              )}
+              <Badge className={`text-[9px] ${statusColors[trip.status] || statusColors.planning}`}>
+                {trip.status}
+              </Badge>
+            </div>
           </div>
 
           {trip.destination && (

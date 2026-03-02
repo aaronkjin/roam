@@ -298,6 +298,156 @@
   image-rendering: crisp-edges;
 }
 
+/* ===== Clerk pixel-art overrides ===== */
+
+/* Nuclear: zero border-radius on everything */
+[class^="cl-"],
+[class*=" cl-"],
+[class^="cl-"] *,
+[class*=" cl-"] * {
+  border-radius: 0 !important;
+}
+
+/* Card container */
+.cl-card {
+  border: 3px solid #3D5A80 !important;
+  box-shadow: 4px 4px 0px #3D5A80 !important;
+  background: #FFFFFF !important;
+}
+
+/* Social buttons (Google, etc.) */
+.cl-socialButtonsBlockButton {
+  border: 3px solid #3D5A80 !important;
+  box-shadow: 2px 2px 0px #3D5A80 !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  transform: translate(1px, 1px) !important;
+  box-shadow: 1px 1px 0px #3D5A80 !important;
+}
+
+.cl-socialButtonsBlockButton:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 0 0 0 #3D5A80 !important;
+}
+
+/* Primary buttons (Continue, Sign In) */
+.cl-formButtonPrimary {
+  border: 3px solid #3D5A80 !important;
+  box-shadow: 4px 4px 0px #3D5A80 !important;
+  background: #F4845F !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+}
+
+.cl-formButtonPrimary:hover {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 2px 2px 0px #3D5A80 !important;
+  background: #F4845F !important;
+}
+
+.cl-formButtonPrimary:active {
+  transform: translate(4px, 4px) !important;
+  box-shadow: 0 0 0 #3D5A80 !important;
+}
+
+/* Input fields */
+.cl-formFieldInput {
+  border: 3px solid #3D5A80 !important;
+  box-shadow: 2px 2px 0px #3D5A80 !important;
+  background: #FFFFFF !important;
+}
+
+.cl-formFieldInput:focus {
+  border-color: #F4845F !important;
+  box-shadow: 4px 4px 0px #F4845F !important;
+}
+
+/* OTP code inputs */
+.cl-otpCodeFieldInput {
+  border: 3px solid #3D5A80 !important;
+  box-shadow: 2px 2px 0px #3D5A80 !important;
+}
+
+/* Divider line */
+.cl-dividerLine {
+  background: #3D5A80 !important;
+  height: 2px !important;
+}
+
+/* Footer links */
+.cl-footerActionLink {
+  color: #F4845F !important;
+}
+
+.cl-footerActionLink:hover {
+  color: #3D5A80 !important;
+}
+
+/* Hide Clerk branding footer in cards */
+.cl-footer {
+  border-top: 2px solid #3D5A80 !important;
+}
+
+/* Identity preview (email shown after entering) */
+.cl-identityPreview {
+  border: 2px solid #3D5A80 !important;
+}
+
+/* Alternative methods buttons */
+.cl-alternativeMethodsBlockButton {
+  border: 2px solid #3D5A80 !important;
+}
+
+/* Avatar */
+.cl-avatarBox {
+  border: 2px solid #3D5A80 !important;
+}
+
+/* User button (header) */
+.cl-userButtonTrigger {
+  border: 2px solid #3D5A80 !important;
+  box-shadow: 2px 2px 0px #3D5A80 !important;
+}
+
+.cl-userButtonTrigger:hover {
+  box-shadow: 1px 1px 0px #3D5A80 !important;
+  transform: translate(1px, 1px) !important;
+}
+
+/* User button popover */
+.cl-userButtonPopoverCard {
+  border: 3px solid #3D5A80 !important;
+  box-shadow: 4px 4px 0px #3D5A80 !important;
+  background: #FFFFFF !important;
+}
+
+.cl-userButtonPopoverActionButton {
+  transition: background 0.1s ease !important;
+}
+
+.cl-userButtonPopoverActionButton:hover {
+  background: #A8D8EA !important;
+}
+
+/* Internal elements cleanup */
+.cl-internal-b3fm6y {
+  border-radius: 0 !important;
+}
+
+/* Phone input */
+.cl-phoneInputBox {
+  border: 3px solid #3D5A80 !important;
+  box-shadow: 2px 2px 0px #3D5A80 !important;
+}
+
+/* Badges inside clerk */
+.cl-badge {
+  border: 2px solid #3D5A80 !important;
+}
+
 /* ===== Mapbox pixel-art overrides ===== */
 
 .mapboxgl-popup-content {

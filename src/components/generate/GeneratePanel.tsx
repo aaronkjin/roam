@@ -13,13 +13,19 @@ import { Input } from "@/components/ui/input";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
 import { Sparkles, Lightbulb, MapPin } from "lucide-react";
 import type { GenerationMode } from "@/types/itinerary";
+import type { TripWithRole } from "@/types/trip";
 import Link from "next/link";
+import { useTrips } from "@/context/TripsContext";
 
 interface GeneratePanelProps {
   tripId: string;
 }
 
 export function GeneratePanel({ tripId }: GeneratePanelProps) {
+  const { trips: allTrips } = useTrips();
+  const tripData = allTrips.find((t) => t.id === tripId);
+  const userRole = tripData && "userRole" in tripData ? (tripData as TripWithRole).userRole : "owner";
+  const canEdit = userRole === "owner" || userRole === "editor";
   const router = useRouter();
   const { items, loading: inspoLoading } = useInspoItems(tripId);
   const { generating, streamedText, result, error, generate, reset } = useGenerate({ tripId });
@@ -139,7 +145,17 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
         </p>
       </div>
 
-      {!generating && !result && (
+      {!canEdit && (
+        <PixelWindow title="View Only" variant="mist">
+          <div className="text-center py-6 space-y-2">
+            <p className="text-sm text-rock">
+              You have viewer access to this trip. Only editors and owners can generate itineraries.
+            </p>
+          </div>
+        </PixelWindow>
+      )}
+
+      {canEdit && !generating && !result && (
         <>
           {/* Inspo selection */}
           <InspoSummary
