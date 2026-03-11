@@ -69,11 +69,47 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Collect photo queries across all days and fetch in parallel
+  type PhotoJob = { dayIdx: number; blockIdx: number; query: string };
+  const jobs: PhotoJob[] = [];
+  for (let d = 0; d < days.length; d++) {
+    for (let b = 0; b < (days[d].blocks?.length ?? 0); b++) {
+      const q = days[d].blocks[b].photo_query;
+      if (q && typeof q === "string") jobs.push({ dayIdx: d, blockIdx: b, query: q });
+    }
+  }
+
+  const pexelsKey = process.env.PEXELS_API_KEY;
+  const photoResults = await Promise.allSettled(
+    jobs.map(async ({ dayIdx, blockIdx, query }) => {
+      if (!pexelsKey) return { dayIdx, blockIdx, imageUrl: null };
+      try {
+        const res = await fetch(
+          `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`,
+          { headers: { Authorization: pexelsKey } }
+        );
+        if (!res.ok) return { dayIdx, blockIdx, imageUrl: null };
+        const data = await res.json();
+        return { dayIdx, blockIdx, imageUrl: data.photos?.[0]?.src?.large ?? null };
+      } catch {
+        return { dayIdx, blockIdx, imageUrl: null };
+      }
+    })
+  );
+
+  const photoMap = new Map<string, string | null>();
+  for (const r of photoResults) {
+    if (r.status === "fulfilled" && r.value) {
+      photoMap.set(`${r.value.dayIdx}:${r.value.blockIdx}`, r.value.imageUrl);
+    }
+  }
+
   // Delete existing itinerary for this trip
   await supabase.from("itinerary_days").delete().eq("trip_id", trip_id);
 
   // Insert days and blocks
-  for (const day of days) {
+  for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
+    const day = days[dayIndex];
     const { data: insertedDay, error: dayError } = await supabase
       .from("itinerary_days")
       .insert({
@@ -103,6 +139,7 @@ export async function POST(req: NextRequest) {
         location_lng: block.location_lng || null,
         cost_estimate: block.cost_estimate || null,
         currency: block.currency || "USD",
+        image_url: photoMap.get(`${dayIndex}:${index}`) ?? null,
         position_index: index,
         ai_generated: true,
       }));

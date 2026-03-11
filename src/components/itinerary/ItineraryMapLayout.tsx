@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useItinerary } from "@/hooks/useItinerary";
 import { useGeocoding } from "@/hooks/useGeocoding";
 import { useTrips } from "@/context/TripsContext";
 import { ItineraryEditor } from "./ItineraryEditor";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Map as MapIcon } from "lucide-react";
+import { Map as MapIcon, GripVertical } from "lucide-react";
 
 const ItineraryMap = dynamic(
   () =>
@@ -29,6 +29,35 @@ export function ItineraryMapLayout({ tripId }: ItineraryMapLayoutProps) {
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [mobileMapOpen, setMobileMapOpen] = useState(false);
   const hoveredRef = useRef<string | null>(null);
+
+  // Resizable split: leftPct is the itinerary panel width as a percentage
+  const [leftPct, setLeftPct] = useState(50);
+  const isDraggingDivider = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const onDividerPointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    isDraggingDivider.current = true;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const onDividerPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDraggingDivider.current || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const pct = ((e.clientX - rect.left) / rect.width) * 100;
+    setLeftPct(Math.min(Math.max(pct, 20), 80));
+  }, []);
+
+  const onDividerPointerUp = useCallback(() => {
+    isDraggingDivider.current = false;
+  }, []);
+
+  // Prevent text selection while dragging
+  useEffect(() => {
+    const prevent = (e: MouseEvent) => { if (isDraggingDivider.current) e.preventDefault(); };
+    document.addEventListener("selectstart", prevent);
+    return () => document.removeEventListener("selectstart", prevent);
+  }, []);
 
   // Get all blocks for geocoding — use stable memo
   const allBlocks = useMemo(
@@ -90,9 +119,17 @@ export function ItineraryMapLayout({ tripId }: ItineraryMapLayoutProps) {
   );
 
   return (
-    <div className="flex h-full">
+    <div
+      ref={containerRef}
+      className="flex h-full"
+      onPointerMove={onDividerPointerMove}
+      onPointerUp={onDividerPointerUp}
+    >
       {/* Left: Itinerary Editor */}
-      <div className="w-full lg:w-1/2 overflow-y-auto">
+      <div
+        className="overflow-y-auto lg:block"
+        style={{ width: `${leftPct}%`, minWidth: 0 }}
+      >
         <ItineraryEditor
           tripId={tripId}
           itinerary={itinerary}
@@ -103,8 +140,20 @@ export function ItineraryMapLayout({ tripId }: ItineraryMapLayoutProps) {
         />
       </div>
 
+      {/* Draggable divider (desktop only) */}
+      <div
+        onPointerDown={onDividerPointerDown}
+        className="hidden lg:flex items-center justify-center w-3 shrink-0 border-x-[3px] border-night bg-milk hover:bg-mist cursor-col-resize z-10 group"
+        title="Drag to resize"
+      >
+        <GripVertical className="w-3 h-3 text-rock group-hover:text-night" />
+      </div>
+
       {/* Right: Map (desktop) */}
-      <div className="hidden lg:block lg:w-1/2 border-l-[3px] border-night relative">
+      <div
+        className="hidden lg:block relative"
+        style={{ width: `${100 - leftPct}%`, minWidth: 0 }}
+      >
         {days.length > 0 && <ItineraryMap {...mapProps} />}
       </div>
 
