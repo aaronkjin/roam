@@ -21,7 +21,8 @@ Your output must be valid JSON matching this schema:
           "location_lat": 41.0106,
           "location_lng": 28.9684,
           "cost_estimate": 0,
-          "currency": "USD"
+          "currency": "USD",
+          "photo_query": "Kinkaku-ji golden pavilion reflection Kyoto Japan"
         }
       ]
     }
@@ -37,6 +38,9 @@ Guidelines:
 - CRITICAL: location_lat and location_lng must be precise GPS coordinates for the EXACT venue or landmark. Use coordinates you are confident about — for example, Namsan Seoul Tower is at 37.5512, 126.9882 (not a generic city center). If you are unsure of exact coordinates for a specific restaurant or shop, use the coordinates of the nearest well-known landmark or intersection. Never default to generic city-center coordinates.
 - Descriptions should be 1-3 sentences, vivid and helpful
 - Cost estimates in USD unless specified
+- photo_query: A vivid 4-8 word image search string. Include place name + visual descriptor + city/country. Examples: activity → "Kinkaku-ji golden pavilion temple Kyoto Japan", food → "kaiseki tasting menu Japanese restaurant interior Kyoto", accommodation → "traditional ryokan exterior garden Kyoto Japan". OMIT photo_query entirely for type "transport", "note", and "heading".
+- GEOGRAPHIC GROUPING: Each day must focus on one neighborhood/district. Activities on the same day should be walkable or within 1-2 transit stops of each other. Use heading blocks to mark district transitions within a day.
+- HOTEL BOOKENDS: If stayAddress is provided, each day MUST start with an "accommodation" block (title: "Leave [Hotel Name]", start_time: "09:00") and end with an "accommodation" block (title: "Return to [Hotel Name]"). Hotel accommodation blocks should NOT have a photo_query.
 - Always output ONLY the JSON, no markdown or extra text`;
 
 interface TripContext {
@@ -60,7 +64,7 @@ function buildTripContextBlock(ctx?: TripContext): string {
   if (ctx?.stayAddress) {
     lines.push(`Staying at: ${ctx.stayAddress}`);
     lines.push(
-      "Factor in proximity to the accommodation when ordering activities. Suggest nearby breakfast/dinner spots when appropriate."
+      "REQUIRED: Start every day with an accommodation block for departing from this address, and end every day with an accommodation block for returning here."
     );
   }
   return lines.length > 0 ? "\n" + lines.join("\n") + "\n" : "";

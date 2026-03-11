@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/inspo/parse",
   "/api/image-proxy",
   "/api/geocode",
+  "/api/photos",
   "/api/setup",
 ]);
 

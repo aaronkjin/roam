@@ -127,4 +127,5 @@ export interface GeneratedBlock {
   location_lng?: number;
   cost_estimate?: number;
   currency?: string;
+  photo_query?: string;
 }
