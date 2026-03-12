@@ -134,7 +134,7 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
   const { trips: allTrips, updateTrip, fetchTrips } = useTrips();
   const tripData = allTrips.find((t) => t.id === tripId);
   const userRole = tripData && "userRole" in tripData ? (tripData as TripWithRole).userRole : "owner";
-  const canEdit = userRole === "owner" || userRole === "editor";
+  const canEdit = userRole === "owner";
   const router = useRouter();
   const { items, loading: inspoLoading } = useInspoItems(tripId);
   const { generating, streamedText, result, error, generate, reset } = useGenerate({ tripId });
@@ -206,7 +206,6 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
     setAccepting(true);
 
     try {
-      // Save itinerary to DB
       const res = await fetch("/api/itinerary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -217,7 +216,6 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
       });
 
       if (!res.ok) throw new Error("Failed to save itinerary");
-
       await fetchTrips();
       router.push(`/trip/${tripId}/itinerary`);
     } catch {
@@ -273,7 +271,7 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
         <PixelWindow title="View Only" variant="mist">
           <div className="text-center py-6 space-y-2">
             <p className="text-sm text-rock">
-              You have viewer access to this trip. Only editors and owners can generate itineraries.
+              Only the trip owner can generate or replace the itinerary. Collaborators can still add inspo and leave reviews.
             </p>
           </div>
         </PixelWindow>

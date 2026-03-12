@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Sparkles, Lightbulb, PenTool, ClipboardCheck } from "lucide-react";
+import { Sparkles, Lightbulb, PenTool, ClipboardCheck, Users } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { InviteDialog } from "@/components/itinerary/InviteDialog";
+import { useTrips } from "@/context/TripsContext";
+import type { TripWithRole } from "@/types/trip";
 
 interface TripNavProps {
   tripId: string;
@@ -18,43 +23,83 @@ const tabs = [
 
 export function TripNav({ tripId }: TripNavProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { trips } = useTrips();
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteQueryDismissed, setInviteQueryDismissed] = useState(false);
+  const trip = trips.find((item) => item.id === tripId);
+  const userRole = trip && "userRole" in trip ? (trip as TripWithRole).userRole : "owner";
+  const canManageCollaborators = userRole === "owner";
+  const inviteRequested = canManageCollaborators && searchParams.get("invite") === "1";
+  const inviteOpen = inviteRequested ? !inviteQueryDismissed : inviteDialogOpen;
 
   return (
-    <nav className="flex border-b-[3px] border-night bg-milk">
-      {tabs.map((tab, i) => {
-        const href = `/trip/${tripId}/${tab.href}`;
-        const isActive = pathname.startsWith(href);
-        const Icon = tab.icon;
+    <>
+      <nav className="flex items-stretch justify-between gap-3 border-b-[3px] border-night bg-milk">
+        <div className="flex min-w-0">
+          {tabs.map((tab, i) => {
+            const href = `/trip/${tripId}/${tab.href}`;
+            const isActive = pathname.startsWith(href);
+            const Icon = tab.icon;
 
-        return (
-          <Link
-            key={tab.href}
-            href={href}
-            className={cn(
-              "flex items-center gap-2 px-6 py-3 font-[family-name:var(--font-silkscreen)] text-sm uppercase tracking-wider transition-colors border-b-[3px] -mb-[3px]",
-              i > 0 && "border-l-[3px] border-l-night",
-              i === tabs.length - 1 && "border-r-[3px] border-r-night",
-              isActive
-                ? "bg-sky text-white border-b-night"
-                : "text-rock hover:text-night hover:bg-sky/20 border-b-transparent"
-            )}
-          >
-            <Icon className="w-4 h-4" />
-            {tab.label}
-            {/* Step number */}
-            <span
-              className={cn(
-                "w-5 h-5 flex items-center justify-center text-[10px] border-[2px] ml-1",
-                isActive
-                  ? "border-white bg-white/20 text-white"
-                  : "border-night/30 text-rock"
-              )}
+            return (
+              <Link
+                key={tab.href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-2 px-6 py-3 font-[family-name:var(--font-silkscreen)] text-sm uppercase tracking-wider transition-colors border-b-[3px] -mb-[3px]",
+                  i > 0 && "border-l-[3px] border-l-night",
+                  i === tabs.length - 1 && "border-r-[3px] border-r-night",
+                  isActive
+                    ? "bg-sky text-white border-b-night"
+                    : "text-rock hover:text-night hover:bg-sky/20 border-b-transparent"
+                )}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+                <span
+                  className={cn(
+                    "w-5 h-5 flex items-center justify-center text-[10px] border-[2px] ml-1",
+                    isActive
+                      ? "border-white bg-white/20 text-white"
+                      : "border-night/30 text-rock"
+                  )}
+                >
+                  {i + 1}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {canManageCollaborators && (
+          <div className="flex items-center pr-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setInviteDialogOpen(true)}
             >
-              {i + 1}
-            </span>
-          </Link>
-        );
-      })}
-    </nav>
+              <Users className="w-3.5 h-3.5" />
+              Collaborators
+            </Button>
+          </div>
+        )}
+      </nav>
+
+      {canManageCollaborators && (
+        <InviteDialog
+          tripId={tripId}
+          open={inviteOpen}
+          onOpenChange={(open) => {
+            if (!open && inviteRequested) {
+              setInviteQueryDismissed(true);
+              return;
+            }
+            setInviteDialogOpen(open);
+          }}
+        />
+      )}
+    </>
   );
 }

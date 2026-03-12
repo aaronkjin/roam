@@ -19,7 +19,7 @@ export async function PATCH(
   }
 
   const access = await requireTripAccess(authResult.userId, tripId, "editor");
-  if (!access) {
+  if (!access || access.role !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -57,7 +57,7 @@ export async function DELETE(
   }
 
   const access = await requireTripAccess(authResult.userId, tripId, "editor");
-  if (!access) {
+  if (!access || access.role !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

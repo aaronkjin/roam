@@ -41,6 +41,8 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
   const { trips, updateTrip } = useTrips();
   const { days, loading, updateBlock } = useItinerary(tripId);
   const trip = trips.find((t) => t.id === tripId);
+  const userRole = trip && "userRole" in trip ? trip.userRole : "owner";
+  const canReview = userRole === "owner" || userRole === "editor";
 
   const [overallRating, setOverallRating] = useState(0);
   const [reviewNote, setReviewNote] = useState("");
@@ -143,6 +145,7 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
   }, []);
 
   const handleSave = useCallback(async () => {
+    if (!canReview) return;
     setSaving(true);
     setSaved(false);
     try {
@@ -172,7 +175,7 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
     } finally {
       setSaving(false);
     }
-  }, [tripId, overallRating, reviewNote, blockReviews, updateTrip, updateBlock]);
+  }, [blockReviews, canReview, overallRating, reviewNote, tripId, updateBlock, updateTrip]);
 
   if (loading) {
     return (
@@ -210,7 +213,7 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
         <h2 className="text-base">
           {isCompleted ? "Trip Review" : "Review & Complete Trip"}
         </h2>
-        <Button onClick={handleSave} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving || !canReview}>
           {saving ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : saved ? (
@@ -222,11 +225,21 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
         </Button>
       </div>
 
+      {!canReview && (
+        <PixelWindow title="View Only" variant="mist">
+          <div className="text-center py-6 space-y-2">
+            <p className="text-sm text-rock">
+              Only the trip owner and collaborators can leave reviews on this trip.
+            </p>
+          </div>
+        </PixelWindow>
+      )}
+
       {/* Overall trip review */}
       <PixelWindow title="Overall Rating" variant="jam">
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <StarRating value={overallRating} onChange={setOverallRating} />
+            <StarRating value={overallRating} onChange={setOverallRating} readonly={!canReview} />
             {overallRating > 0 && (
               <span className="text-xs text-rock">{overallRating}/5</span>
             )}
@@ -237,6 +250,7 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
             placeholder="How was the trip overall? Any highlights or things you'd change?"
             rows={3}
             className="text-sm"
+            disabled={!canReview}
           />
         </div>
       </PixelWindow>
@@ -288,6 +302,7 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
                       value={review.rating}
                       onChange={(val) => updateBlockRating(block.id, val)}
                       size="sm"
+                      readonly={!canReview}
                     />
                     <Textarea
                       value={review.review_note}
@@ -295,13 +310,16 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
                       placeholder="Notes on this activity..."
                       rows={1}
                       className="text-xs"
+                      disabled={!canReview}
                     />
-                    <BlockMediaUpload
-                      blockId={block.id}
-                      media={blockMedia[block.id] || []}
-                      onUpload={handleMediaUpload}
-                      onDelete={handleMediaDelete}
-                    />
+                    {canReview && (
+                      <BlockMediaUpload
+                        blockId={block.id}
+                        media={blockMedia[block.id] || []}
+                        onUpload={handleMediaUpload}
+                        onDelete={handleMediaDelete}
+                      />
+                    )}
                   </div>
                 );
               })}

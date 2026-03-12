@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   }
 
   const access = await requireTripAccess(authResult.userId, trip_id, "editor");
-  if (!access) {
+  if (!access || access.role !== "owner") {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
       headers: { "Content-Type": "application/json" },

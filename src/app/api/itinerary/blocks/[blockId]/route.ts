@@ -25,6 +25,14 @@ export async function PATCH(
 
   const supabase = await createClient();
   const body = await req.json();
+  const updateKeys = Object.keys(body);
+  const reviewOnlyKeys = ["rating", "review_note"];
+  const isReviewOnlyUpdate =
+    updateKeys.length > 0 && updateKeys.every((key) => reviewOnlyKeys.includes(key));
+
+  if (access.role !== "owner" && !isReviewOnlyUpdate) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { data, error } = await supabase
     .from("itinerary_blocks")
@@ -57,7 +65,7 @@ export async function DELETE(
   }
 
   const access = await requireTripAccess(authResult.userId, tripId, "editor");
-  if (!access) {
+  if (!access || access.role !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

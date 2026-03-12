@@ -34,8 +34,7 @@ export function CreateTripModal({ open, onOpenChange }: CreateTripModalProps) {
   const exactDateRangeLabel = buildDateRangeLabel(startDate, endDate);
   const resolvedDateRangeLabel = exactDateRangeLabel || dateRangeLabel.trim();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreate = async (inviteAfterCreate: boolean) => {
     if (!title.trim()) return;
     if (!resolvedDateRangeLabel) return;
 
@@ -58,7 +57,9 @@ export function CreateTripModal({ open, onOpenChange }: CreateTripModalProps) {
       setStartDate("");
       setEndDate("");
       onOpenChange(false);
-      router.push(`/trip/${trip.id}/inspo`);
+      router.push(
+        inviteAfterCreate ? `/trip/${trip.id}/inspo?invite=1` : `/trip/${trip.id}/inspo`
+      );
     }
   };
 
@@ -72,7 +73,13 @@ export function CreateTripModal({ open, onOpenChange }: CreateTripModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleCreate(false);
+          }}
+          className="space-y-4"
+        >
           <div>
             <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
               Trip Name *
@@ -158,6 +165,18 @@ export function CreateTripModal({ open, onOpenChange }: CreateTripModalProps) {
               onClick={() => onOpenChange(false)}
             >
               Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                !title.trim() ||
+                !resolvedDateRangeLabel ||
+                saving
+              }
+              onClick={() => void handleCreate(true)}
+            >
+              Invite People
             </Button>
             <Button
               type="submit"
