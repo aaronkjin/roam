@@ -209,6 +209,20 @@
   box-shadow: 8px 8px 0px #3D5A80;
 }
 
+[data-slot="dialog-close"] {
+  background-color: white !important;
+  border: 2px solid #3D5A80 !important;
+  border-radius: 0 !important;
+  opacity: 1 !important;
+  padding: 4px !important;
+  color: #3D5A80 !important;
+}
+
+[data-slot="dialog-close"]:hover {
+  background-color: #F4845F !important;
+  color: white !important;
+}
+
 /* Input overrides */
 [data-slot="input"],
 [data-slot="textarea"] {
@@ -386,9 +400,29 @@
   color: #3D5A80 !important;
 }
 
-/* Hide Clerk branding footer in cards */
-.cl-footer {
-  border-top: 2px solid #3D5A80 !important;
+/* Hide Clerk branding footer in all modals/cards/profile */
+.cl-footer,
+.cl-userButtonPopoverFooter,
+.cl-footerPages,
+.cl-footerAction,
+[class*="cl-internal"][class*="powered"] {
+  display: none !important;
+}
+
+/* Hide "Secured by Clerk" + "Development mode" in UserProfile modal */
+[class*="cl-internal"][class*="branding"],
+[class*="cl-internal"][class*="Badge"],
+.cl-userProfile-root [class*="secured"],
+.cl-userProfile-root a[href*="clerk"],
+.cl-userProfile-root + div a[href*="clerk"] {
+  display: none !important;
+}
+
+/* Broad catch-all: hide any Clerk branding/dev-mode text */
+div[class^="cl-internal-"] {
+  &:has(a[href*="clerk.com"]) {
+    display: none !important;
+  }
 }
 
 /* Identity preview (email shown after entering) */

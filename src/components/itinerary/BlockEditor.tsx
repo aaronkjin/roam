@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { BlockDetailModal } from "./BlockDetailModal";
+import { TransportSelector } from "./TransportSelector";
 import {
   GripVertical,
   Trash2,
@@ -23,7 +25,8 @@ import {
   Hotel,
   StickyNote,
   Heading,
-  Sparkles,
+  Square,
+  CheckSquare,
 } from "lucide-react";
 import type { ItineraryBlock, UpdateBlockInput } from "@/types/itinerary";
 
@@ -36,6 +39,10 @@ interface BlockEditorProps {
   /** Map pin number (only set for blocks that appear on the map) */
   mapIndex?: number;
   canEdit?: boolean;
+  /** AI edit selection mode */
+  isSelectMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; label: string; fallbackBg: string }> = {
@@ -47,16 +54,35 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; label
   heading: { icon: Heading, color: "bg-night text-white", label: "Heading", fallbackBg: "bg-night/5" },
 };
 
+/** Convert a numeric cost estimate to dollar-sign notation ($, $$, $$$, $$$$) */
+function costToDollarSigns(cost: number | null | undefined): string | null {
+  if (cost == null || cost <= 0) return null;
+  if (cost <= 15) return "$";
+  if (cost <= 40) return "$$";
+  if (cost <= 100) return "$$$";
+  return "$$$$";
+}
+
 function buildMapsUrl(block: ItineraryBlock): string | null {
   if (!block.location) return null;
-  if (block.location_lat && block.location_lng) {
-    return `https://maps.google.com/?q=${block.location_lat},${block.location_lng}`;
-  }
+  // Always search by location name for better Google Maps results
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(block.location)}`;
 }
 
-export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapIndex, canEdit = true }: BlockEditorProps) {
+export function BlockEditor({
+  block,
+  onUpdate,
+  onDelete,
+  isActive,
+  onHover,
+  mapIndex,
+  canEdit = true,
+  isSelectMode = false,
+  isSelected = false,
+  onToggleSelect,
+}: BlockEditorProps) {
   const [expanded, setExpanded] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const config = typeConfig[block.type] || typeConfig.activity;
   const Icon = config.icon;
 
@@ -81,6 +107,14 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
     [block.id, onUpdate]
   );
 
+  const canOpenDetail = block.type === "activity" || block.type === "food";
+
+  const handleCardClick = useCallback(() => {
+    if (isSelectMode && onToggleSelect) {
+      onToggleSelect();
+    }
+  }, [isSelectMode, onToggleSelect]);
+
   if (block.type === "heading") {
     return (
       <div
@@ -94,7 +128,7 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
         onMouseEnter={() => onHover?.(block.id)}
         onMouseLeave={() => onHover?.(null)}
       >
-        {canEdit && (
+        {canEdit && !isSelectMode && (
           <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5">
             <GripVertical className="w-4 h-4 text-rock" />
           </button>
@@ -108,7 +142,7 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
           placeholder="Section heading..."
           readOnly={!canEdit}
         />
-        {canEdit && (
+        {canEdit && !isSelectMode && (
           <Button
             variant="ghost"
             size="icon"
@@ -122,8 +156,101 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
     );
   }
 
-  // Transport block: sky banner with icon, no photo
+  // Accommodation block — slim compact card (no photo, no expand)
+  if (block.type === "accommodation") {
+    const mapsUrl = buildMapsUrl(block);
+    return (
+      <div
+        id={`block-${block.id}`}
+        ref={setNodeRef}
+        style={style}
+        className={cn(
+          "flex items-center gap-2 p-3 bg-moss/10 border-[3px] border-moss/30",
+          isDragging && "opacity-50",
+          isActive && "border-moss bg-moss/20",
+          isSelected && "border-jam bg-jam/5",
+        )}
+        onMouseEnter={() => onHover?.(block.id)}
+        onMouseLeave={() => onHover?.(null)}
+        onClick={isSelectMode ? handleCardClick : undefined}
+      >
+        {canEdit && !isSelectMode && (
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5">
+            <GripVertical className="w-4 h-4 text-rock" />
+          </button>
+        )}
+        {isSelectMode && (
+          <div className="p-0.5">
+            {isSelected ? (
+              <CheckSquare className="w-4 h-4 text-jam" />
+            ) : (
+              <Square className="w-4 h-4 text-rock" />
+            )}
+          </div>
+        )}
+        <Hotel className="w-4 h-4 text-moss shrink-0" />
+        <Badge className="text-[9px] bg-moss text-white shrink-0">Stay</Badge>
+        <span className="flex-1 text-xs font-medium text-night truncate">
+          {block.title}
+        </span>
+        {block.start_time && (
+          <span className="text-[10px] font-[family-name:var(--font-silkscreen)] text-rock shrink-0">
+            {block.start_time}{block.end_time ? `–${block.end_time}` : ""}
+          </span>
+        )}
+        {mapIndex != null && (
+          <div className="flex items-center justify-center w-5 h-5 border-[2px] border-night shrink-0 font-[family-name:var(--font-silkscreen)] text-[9px] font-bold leading-none bg-moss text-white">
+            {mapIndex}
+          </div>
+        )}
+        {mapsUrl && (
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] text-sky border-[2px] border-sky px-1.5 py-0.5 hover:bg-sky hover:text-night transition-colors shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MapPin className="w-3 h-3" /> Maps
+          </a>
+        )}
+        {canEdit && !isSelectMode && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(block.id)}
+            className="h-6 w-6 text-rock hover:text-destructive shrink-0"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  // Transport block with transport options
   if (block.type === "transport") {
+    // If this transport block has transport_options, render the selector
+    if (block.transport_options && block.transport_options.length > 0) {
+      return (
+        <div
+          id={`block-${block.id}`}
+          ref={setNodeRef}
+          style={style}
+          onMouseEnter={() => onHover?.(block.id)}
+          onMouseLeave={() => onHover?.(null)}
+        >
+          <TransportSelector
+            options={block.transport_options}
+            selectedMode={block.selected_transport_mode}
+            onSelect={(mode) => onUpdate(block.id, { selected_transport_mode: mode })}
+            canEdit={canEdit}
+          />
+        </div>
+      );
+    }
+
+    // Legacy transport block rendering
     const mapsUrl = buildMapsUrl(block);
     return (
       <div
@@ -141,7 +268,7 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
       >
         {/* Transport header bar */}
         <div className="flex items-center gap-2 px-3 py-2 bg-sky/20 border-b-[2px] border-sky/40">
-          {canEdit && (
+          {canEdit && !isSelectMode && (
             <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-0.5">
               <GripVertical className="w-4 h-4 text-rock" />
             </button>
@@ -153,9 +280,9 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
               ~{block.duration_minutes} min
             </span>
           )}
-          {block.cost_estimate != null && block.cost_estimate > 0 && (
-            <span className="text-[10px] font-[family-name:var(--font-silkscreen)] text-rock border-[2px] border-rock/30 px-1.5 py-0.5">
-              {block.currency !== "USD" ? block.currency : "$"}{block.cost_estimate}
+          {costToDollarSigns(block.cost_estimate) && (
+            <span className="text-[10px] font-[family-name:var(--font-silkscreen)] text-white bg-grass border-[2px] border-night px-1.5 py-0.5">
+              {costToDollarSigns(block.cost_estimate)}
             </span>
           )}
           <div className="flex-1" />
@@ -165,7 +292,7 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
           >
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
-          {canEdit && (
+          {canEdit && !isSelectMode && (
             <Button
               variant="ghost"
               size="icon"
@@ -284,205 +411,231 @@ export function BlockEditor({ block, onUpdate, onDelete, isActive, onHover, mapI
   const mapsUrl = buildMapsUrl(block);
 
   return (
-    <div
-      id={`block-${block.id}`}
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "border-[3px] border-night/20 bg-white transition-colors overflow-hidden",
-        isDragging && "opacity-50 border-jam",
-        expanded && "border-night",
-        isActive && "border-jam bg-jam/5"
-      )}
-      onMouseEnter={() => onHover?.(block.id)}
-      onMouseLeave={() => onHover?.(null)}
-    >
-      {/* Photo banner */}
-      <div className="relative w-full" style={{ aspectRatio: "16/7" }}>
-        {block.image_url ? (
-          <Image
-            src={block.image_url}
-            alt={block.title}
-            fill
-            className="object-cover"
-            sizes="(max-width:768px) 100vw, 600px"
-            unoptimized
-          />
-        ) : (
-          <div className={cn("w-full h-full", config.fallbackBg)} />
+    <>
+      <div
+        id={`block-${block.id}`}
+        ref={setNodeRef}
+        style={style}
+        className={cn(
+          "border-[3px] border-night/20 bg-white transition-colors overflow-hidden",
+          isDragging && "opacity-50 border-jam",
+          expanded && "border-night",
+          isActive && "border-jam bg-jam/5",
+          isSelected && "border-jam bg-jam/5",
         )}
-        {/* Drag handle overlay top-left */}
-        {canEdit && (
-          <button
-            {...attributes}
-            {...listeners}
-            className="absolute top-1.5 left-1.5 cursor-grab active:cursor-grabbing bg-white/80 p-0.5 border-[2px] border-night/20"
-          >
-            <GripVertical className="w-4 h-4 text-night" />
-          </button>
-        )}
-        {/* AI badge top-right (only when there's a photo) */}
-        {block.ai_generated && block.image_url && (
-          <div className="absolute top-1.5 right-1.5 bg-white/80 border-[2px] border-night/20 px-1.5 py-0.5">
-            <Sparkles className="w-3 h-3 text-jam inline" />
-          </div>
-        )}
-      </div>
-
-      {/* Card body */}
-      <div className="p-3 space-y-2">
-        {/* Type badge + time + map pin */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge className={cn("text-[9px] shrink-0", config.color)}>
-            <Icon className="w-3 h-3 mr-1" />
-            {config.label}
-          </Badge>
-          {block.start_time && (
-            <span className="text-[10px] font-[family-name:var(--font-silkscreen)] text-rock">
-              {block.start_time}{block.end_time ? `–${block.end_time}` : ""}
-            </span>
+        onMouseEnter={() => onHover?.(block.id)}
+        onMouseLeave={() => onHover?.(null)}
+        onClick={isSelectMode ? handleCardClick : undefined}
+      >
+        {/* Photo banner */}
+        <div
+          className={cn("relative w-full group", canOpenDetail && !isSelectMode && "cursor-pointer")}
+          style={{ aspectRatio: "16/7" }}
+          onClick={canOpenDetail && !isSelectMode ? () => setDetailOpen(true) : undefined}
+        >
+          {block.image_url ? (
+            <Image
+              src={block.image_url}
+              alt={block.title}
+              fill
+              className="object-cover"
+              sizes="(max-width:768px) 100vw, 600px"
+              unoptimized
+            />
+          ) : (
+            <div className={cn("w-full h-full", config.fallbackBg)} />
           )}
-          {mapIndex != null && (
-            <div
-              className={cn(
-                "flex items-center justify-center w-5 h-5 border-[2px] border-night shrink-0 font-[family-name:var(--font-silkscreen)] text-[9px] font-bold leading-none",
-                config.color
-              )}
-            >
-              {mapIndex}
-            </div>
-          )}
-        </div>
-
-        {/* Editable title */}
-        <input
-          type="text"
-          value={block.title}
-          onChange={(e) => handleFieldChange("title", e.target.value)}
-          className="w-full text-sm font-medium text-night bg-transparent outline-none"
-          placeholder="Block title..."
-          readOnly={!canEdit}
-        />
-
-        {/* Description preview (line-clamped) */}
-        {block.description && !expanded && (
-          <p className="text-xs text-rock line-clamp-3 leading-relaxed">{block.description}</p>
-        )}
-
-        {/* Footer: Maps + cost + expand + delete */}
-        <div className="flex items-center gap-2 pt-0.5">
-          {mapsUrl && (
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] text-sky border-[2px] border-sky px-1.5 py-0.5 hover:bg-sky hover:text-night transition-colors"
+          {/* Drag handle overlay top-left */}
+          {canEdit && !isSelectMode && (
+            <button
+              {...attributes}
+              {...listeners}
+              className="absolute top-1.5 left-1.5 cursor-grab active:cursor-grabbing bg-white/80 p-0.5 border-[2px] border-night/20"
               onClick={(e) => e.stopPropagation()}
             >
-              <MapPin className="w-3 h-3" /> Maps
-            </a>
+              <GripVertical className="w-4 h-4 text-night" />
+            </button>
           )}
-          {block.cost_estimate != null && block.cost_estimate > 0 && (
-            <span className="text-[10px] font-[family-name:var(--font-silkscreen)] text-rock border-[2px] border-rock/30 px-1.5 py-0.5">
-              {block.currency !== "USD" ? block.currency : "$"}{block.cost_estimate}
-            </span>
-          )}
-          <div className="flex-1" />
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="p-0.5 text-rock hover:text-night"
-          >
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-          {canEdit && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete(block.id)}
-              className="h-6 w-6 text-rock hover:text-destructive"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+          {/* Select checkbox in select mode */}
+          {isSelectMode && (
+            <div className="absolute top-1.5 left-1.5 bg-white/80 p-0.5 border-[2px] border-night/20">
+              {isSelected ? (
+                <CheckSquare className="w-4 h-4 text-jam" />
+              ) : (
+                <Square className="w-4 h-4 text-rock" />
+              )}
+            </div>
           )}
         </div>
+
+        {/* Card body */}
+        <div className="p-3 space-y-2">
+          {/* Type badge + time + map pin */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge className={cn("text-[9px] shrink-0", config.color)}>
+              <Icon className="w-3 h-3 mr-1" />
+              {config.label}
+            </Badge>
+            {block.start_time && (
+              <span className="text-[10px] font-[family-name:var(--font-silkscreen)] text-rock">
+                {block.start_time}{block.end_time ? `–${block.end_time}` : ""}
+              </span>
+            )}
+            {mapIndex != null && (
+              <div
+                className={cn(
+                  "flex items-center justify-center w-5 h-5 border-[2px] border-night shrink-0 font-[family-name:var(--font-silkscreen)] text-[9px] font-bold leading-none",
+                  config.color
+                )}
+              >
+                {mapIndex}
+              </div>
+            )}
+          </div>
+
+          {/* Editable title */}
+          <input
+            type="text"
+            value={block.title}
+            onChange={(e) => handleFieldChange("title", e.target.value)}
+            onClick={canOpenDetail && !isSelectMode ? () => setDetailOpen(true) : undefined}
+            className={cn(
+              "w-full text-sm font-medium text-night bg-transparent outline-none",
+              canOpenDetail && !isSelectMode && "cursor-pointer hover:text-jam"
+            )}
+            placeholder="Block title..."
+            readOnly={!canEdit}
+          />
+
+          {/* Description preview (line-clamped) */}
+          {block.description && !expanded && (
+            <p className="text-xs text-rock line-clamp-3 leading-relaxed">{block.description}</p>
+          )}
+
+          {/* Footer: Maps + cost + expand + delete */}
+          <div className="flex items-center gap-2 pt-0.5">
+            {mapsUrl && (
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] text-sky border-[2px] border-sky px-1.5 py-0.5 hover:bg-sky hover:text-night transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MapPin className="w-3 h-3" /> Maps
+              </a>
+            )}
+            {costToDollarSigns(block.cost_estimate) && (
+              <span className="text-[10px] font-[family-name:var(--font-silkscreen)] text-white bg-grass border-[2px] border-night px-1.5 py-0.5">
+                {costToDollarSigns(block.cost_estimate)}
+              </span>
+            )}
+            <div className="flex-1" />
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="p-0.5 text-rock hover:text-night"
+            >
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            {canEdit && !isSelectMode && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(block.id)}
+                className="h-6 w-6 text-rock hover:text-destructive"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Expanded edit panel */}
+        {expanded && (
+          <div className="px-3 pb-3 border-t-[2px] border-night/10 space-y-3 pt-3">
+            <div>
+              <label className="text-[10px] font-[family-name:var(--font-silkscreen)] uppercase text-rock">
+                Description
+              </label>
+              <Textarea
+                value={block.description || ""}
+                onChange={(e) => handleFieldChange("description", e.target.value)}
+                placeholder="Details about this block..."
+                rows={2}
+                className="mt-1 text-xs"
+                readOnly={!canEdit}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] uppercase text-rock">
+                  <Clock className="w-3 h-3" /> Start
+                </label>
+                <Input
+                  type="time"
+                  value={block.start_time || ""}
+                  onChange={(e) => handleFieldChange("start_time", e.target.value)}
+                  className="mt-1 text-xs"
+                  readOnly={!canEdit}
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] uppercase text-rock">
+                  <Clock className="w-3 h-3" /> End
+                </label>
+                <Input
+                  type="time"
+                  value={block.end_time || ""}
+                  onChange={(e) => handleFieldChange("end_time", e.target.value)}
+                  className="mt-1 text-xs"
+                  readOnly={!canEdit}
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] uppercase text-rock">
+                  <DollarSign className="w-3 h-3" /> Cost
+                </label>
+                <Input
+                  type="number"
+                  value={block.cost_estimate ?? ""}
+                  onChange={(e) =>
+                    handleFieldChange(
+                      "cost_estimate",
+                      e.target.value ? Number(e.target.value) : null
+                    )
+                  }
+                  placeholder="0"
+                  className="mt-1 text-xs"
+                  readOnly={!canEdit}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] uppercase text-rock">
+                <MapPin className="w-3 h-3" /> Location
+              </label>
+              <Input
+                value={block.location || ""}
+                onChange={(e) => handleFieldChange("location", e.target.value)}
+                placeholder="Where is this?"
+                className="mt-1 text-xs"
+                readOnly={!canEdit}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Expanded edit panel */}
-      {expanded && (
-        <div className="px-3 pb-3 border-t-[2px] border-night/10 space-y-3 pt-3">
-          <div>
-            <label className="text-[10px] font-[family-name:var(--font-silkscreen)] uppercase text-rock">
-              Description
-            </label>
-            <Textarea
-              value={block.description || ""}
-              onChange={(e) => handleFieldChange("description", e.target.value)}
-              placeholder="Details about this block..."
-              rows={2}
-              className="mt-1 text-xs"
-              readOnly={!canEdit}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] uppercase text-rock">
-                <Clock className="w-3 h-3" /> Start
-              </label>
-              <Input
-                type="time"
-                value={block.start_time || ""}
-                onChange={(e) => handleFieldChange("start_time", e.target.value)}
-                className="mt-1 text-xs"
-                readOnly={!canEdit}
-              />
-            </div>
-            <div>
-              <label className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] uppercase text-rock">
-                <Clock className="w-3 h-3" /> End
-              </label>
-              <Input
-                type="time"
-                value={block.end_time || ""}
-                onChange={(e) => handleFieldChange("end_time", e.target.value)}
-                className="mt-1 text-xs"
-                readOnly={!canEdit}
-              />
-            </div>
-            <div>
-              <label className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] uppercase text-rock">
-                <DollarSign className="w-3 h-3" /> Cost
-              </label>
-              <Input
-                type="number"
-                value={block.cost_estimate ?? ""}
-                onChange={(e) =>
-                  handleFieldChange(
-                    "cost_estimate",
-                    e.target.value ? Number(e.target.value) : null
-                  )
-                }
-                placeholder="0"
-                className="mt-1 text-xs"
-                readOnly={!canEdit}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] uppercase text-rock">
-              <MapPin className="w-3 h-3" /> Location
-            </label>
-            <Input
-              value={block.location || ""}
-              onChange={(e) => handleFieldChange("location", e.target.value)}
-              placeholder="Where is this?"
-              className="mt-1 text-xs"
-              readOnly={!canEdit}
-            />
-          </div>
-        </div>
+      {/* Detail modal for activity/food blocks */}
+      {canOpenDetail && (
+        <BlockDetailModal
+          block={block}
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+        />
       )}
-    </div>
+    </>
   );
 }

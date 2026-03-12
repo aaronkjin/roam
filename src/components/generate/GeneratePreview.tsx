@@ -1,9 +1,11 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
-import { Check, RotateCcw, Clock, MapPin, DollarSign } from "lucide-react";
+import { Check, RotateCcw, Clock, MapPin, DollarSign, AlertTriangle, X } from "lucide-react";
+import { validateItinerary } from "@/lib/itinerary-validator";
 import type { GeneratedItinerary } from "@/types/itinerary";
 
 interface GeneratePreviewProps {
@@ -28,6 +30,9 @@ export function GeneratePreview({
   onRegenerate,
   accepting,
 }: GeneratePreviewProps) {
+  const warnings = useMemo(() => validateItinerary(itinerary), [itinerary]);
+  const [warningsDismissed, setWarningsDismissed] = useState(false);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -43,6 +48,26 @@ export function GeneratePreview({
           </Button>
         </div>
       </div>
+
+      {/* Validation warnings */}
+      {warnings.length > 0 && !warningsDismissed && (
+        <div className="border-[2px] border-rock/40 bg-milk p-3 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 font-[family-name:var(--font-silkscreen)] text-[10px] text-rock uppercase">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              {warnings.length} suggestion{warnings.length !== 1 ? "s" : ""}
+            </span>
+            <button onClick={() => setWarningsDismissed(true)} className="text-rock hover:text-night">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {warnings.map((w, i) => (
+            <p key={i} className="text-[10px] text-rock">
+              Day {w.dayNumber}: {w.message}
+            </p>
+          ))}
+        </div>
+      )}
 
       {itinerary.days.map((day) => (
         <PixelWindow key={day.day_number} title={`Day ${day.day_number}`} variant="mist">

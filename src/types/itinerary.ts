@@ -32,6 +32,14 @@ export interface ItineraryDay {
   blocks?: ItineraryBlock[];
 }
 
+export interface TransportOption {
+  mode: "walking" | "transit" | "driving" | "cycling";
+  duration_minutes: number;
+  distance_meters: number;
+  cost_estimate: number;
+  route_description: string;
+}
+
 export interface ItineraryBlock {
   id: string;
   day_id: string;
@@ -53,6 +61,10 @@ export interface ItineraryBlock {
   source_inspo_id: string | null;
   rating: number | null;
   review_note: string | null;
+  transport_options: TransportOption[] | null;
+  selected_transport_mode: string | null;
+  connects_from_block_id: string | null;
+  connects_to_block_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -92,6 +104,10 @@ export interface UpdateBlockInput {
   position_index?: number;
   rating?: number | null;
   review_note?: string | null;
+  transport_options?: TransportOption[] | null;
+  selected_transport_mode?: string | null;
+  connects_from_block_id?: string | null;
+  connects_to_block_id?: string | null;
 }
 
 export interface GenerationLog {

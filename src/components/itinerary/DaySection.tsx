@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -23,6 +23,10 @@ interface DaySectionProps {
   activeBlockId?: string | null;
   onBlockHover?: ((blockId: string | null) => void) | undefined;
   canEdit?: boolean;
+  /** AI edit selection */
+  isSelectMode?: boolean;
+  selectedBlockIds?: Set<string>;
+  onToggleBlockSelect?: (blockId: string) => void;
 }
 
 export function DaySection({
@@ -37,7 +41,12 @@ export function DaySection({
   activeBlockId,
   onBlockHover,
   canEdit = true,
+  isSelectMode = false,
+  selectedBlockIds,
+  onToggleBlockSelect,
 }: DaySectionProps) {
+  const visibleBlocks = useMemo(() => day.blocks, [day.blocks]);
+
   const handleAddBlock = useCallback(
     (type: BlockType) => {
       onAddBlock({
@@ -52,7 +61,7 @@ export function DaySection({
   return (
     <div id={`day-${day.id}`} onClick={onClick} className="cursor-pointer">
       <PixelWindow
-        title={`Day ${day.day_number}${day.title ? ` — ${day.title}` : ""}`}
+        title={`Day ${day.day_number}${day.title ? ` — ${day.title.replace(/^Day\s*\d+\s*[-–—:]\s*/i, "")}` : ""}`}
         variant={isActive ? "jam" : "mist"}
         onClose={canEdit ? () => onDeleteDay(day.id) : undefined}
       >
@@ -61,21 +70,21 @@ export function DaySection({
           <div className="space-y-2">
             <input
               type="text"
-              value={day.title || ""}
+              value={(day.title || "").replace(/^Day\s*\d+\s*[-–—:]\s*/i, "")}
               onChange={(e) => onUpdateDay(day.id, { title: e.target.value })}
               onClick={(e) => e.stopPropagation()}
               className="w-full bg-transparent text-sm font-bold text-night outline-none"
               placeholder="Day title..."
               readOnly={!canEdit}
             />
-            <input
-              type="text"
+            <textarea
               value={day.summary || ""}
               onChange={(e) => onUpdateDay(day.id, { summary: e.target.value })}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-transparent text-xs text-rock outline-none"
+              className="w-full bg-transparent text-xs text-rock outline-none resize-none leading-relaxed"
               placeholder="Brief summary of the day..."
               readOnly={!canEdit}
+              rows={Math.max(1, Math.ceil((day.summary || "").length / 60))}
             />
           </div>
 
@@ -83,13 +92,13 @@ export function DaySection({
 
           {/* Blocks */}
           <SortableContext
-            items={day.blocks.map((b) => b.id)}
+            items={visibleBlocks.map((b) => b.id)}
             strategy={verticalListSortingStrategy}
           >
             <div className="space-y-2">
               {(() => {
                 let pinIndex = 0;
-                return day.blocks.map((block) => {
+                return visibleBlocks.map((block) => {
                   const isMappable =
                     block.location_lat &&
                     block.location_lng &&
@@ -106,6 +115,9 @@ export function DaySection({
                       onHover={onBlockHover}
                       mapIndex={isMappable ? pinIndex : undefined}
                       canEdit={canEdit}
+                      isSelectMode={isSelectMode}
+                      isSelected={selectedBlockIds?.has(block.id) ?? false}
+                      onToggleSelect={() => onToggleBlockSelect?.(block.id)}
                     />
                   );
                 });

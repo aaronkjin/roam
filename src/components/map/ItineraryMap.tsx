@@ -1,16 +1,27 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import Map, { Source, Layer, type MapRef } from "react-map-gl/mapbox";
+import MapGL, { Source, Layer, type MapRef } from "react-map-gl/mapbox";
 import { PixelMapMarker } from "./PixelMapMarker";
+import { StayMapMarker } from "./StayMapMarker";
 import { RouteLayer } from "./RouteLayer";
+import { RouteLabel } from "./RouteLabel";
 import { MapPopup } from "./MapPopup";
 import { MapControls } from "./MapControls";
 import { MapDaySelector } from "./MapDaySelector";
 import { MapPin } from "lucide-react";
+import { midpoint, formatDistance } from "@/lib/geo";
+import { useDistanceUnit } from "@/context/DistanceUnitContext";
 import type { ItineraryBlock } from "@/types/itinerary";
 
 import "mapbox-gl/dist/mapbox-gl.css";
+
+interface RouteSegment {
+  from: { lat: number; lng: number };
+  to: { lat: number; lng: number };
+  midpoint: [number, number];
+  distance: number; // meters from Directions API (road distance)
+}
 
 interface ItineraryMapProps {
   blocks: ItineraryBlock[];
@@ -19,6 +30,9 @@ interface ItineraryMapProps {
   dayCount: number;
   activeDayIndex: number;
   onDaySelect: (index: number) => void;
+  stayLat?: number | null;
+  stayLng?: number | null;
+  stayAddress?: string | null;
 }
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
@@ -30,11 +44,15 @@ export function ItineraryMap({
   dayCount,
   activeDayIndex,
   onDaySelect,
+  stayLat,
+  stayLng,
+  stayAddress,
 }: ItineraryMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [popupBlockId, setPopupBlockId] = useState<string | null>(null);
   const [is3D, setIs3D] = useState(true);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const { unit } = useDistanceUnit();
 
   const mappableBlocks = useMemo(
     () =>
@@ -47,6 +65,70 @@ export function ItineraryMap({
       ),
     [blocks],
   );
+
+  // Fetch real road distances from Mapbox Directions API
+  const [routeSegments, setRouteSegments] = useState<RouteSegment[]>([]);
+
+  useEffect(() => {
+    if (mappableBlocks.length < 2) {
+      setRouteSegments([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchDistances() {
+      const segments: RouteSegment[] = [];
+
+      const promises = [];
+      for (let i = 0; i < mappableBlocks.length - 1; i++) {
+        const from = mappableBlocks[i];
+        const to = mappableBlocks[i + 1];
+        const mid = midpoint(from.location_lat!, from.location_lng!, to.location_lat!, to.location_lng!);
+
+        promises.push(
+          fetch(
+            `/api/directions?origin_lat=${from.location_lat}&origin_lng=${from.location_lng}&dest_lat=${to.location_lat}&dest_lng=${to.location_lng}&profile=driving`
+          )
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => ({
+              index: i,
+              from: { lat: from.location_lat!, lng: from.location_lng! },
+              to: { lat: to.location_lat!, lng: to.location_lng! },
+              midpoint: mid,
+              distance: data?.distance_meters ?? 0,
+            }))
+            .catch(() => ({
+              index: i,
+              from: { lat: from.location_lat!, lng: from.location_lng! },
+              to: { lat: to.location_lat!, lng: to.location_lng! },
+              midpoint: mid,
+              distance: 0,
+            }))
+        );
+      }
+
+      const results = await Promise.all(promises);
+      if (cancelled) return;
+
+      // Sort by original index
+      results.sort((a, b) => a.index - b.index);
+      for (const r of results) {
+        segments.push({
+          from: r.from,
+          to: r.to,
+          midpoint: r.midpoint,
+          distance: r.distance,
+        });
+      }
+      setRouteSegments(segments);
+    }
+
+    fetchDistances();
+    return () => { cancelled = true; };
+  }, [mappableBlocks]);
+
+  const [zoom, setZoom] = useState(12);
 
   // Stable key for triggering fitBounds (based on block IDs)
   const blockKey = useMemo(
@@ -74,6 +156,10 @@ export function ItineraryMap({
 
     const lngs = mappableBlocks.map((b) => b.location_lng!);
     const lats = mappableBlocks.map((b) => b.location_lat!);
+    if (stayLat && stayLng) {
+      lngs.push(stayLng);
+      lats.push(stayLat);
+    }
 
     map.fitBounds(
       [
@@ -87,7 +173,17 @@ export function ItineraryMap({
         duration: 1200,
       },
     );
-  }, [mappableBlocks, is3D]);
+  }, [mappableBlocks, is3D, stayLat, stayLng]);
+
+  // Resize map when container dimensions change (divider drag, window resize, sidebar toggle)
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!map || !mapLoaded) return;
+    const container = map.getContainer();
+    const observer = new ResizeObserver(() => map.resize());
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [mapLoaded]);
 
   // Fit bounds when day changes (blocks change) — use stable blockKey
   useEffect(() => {
@@ -187,7 +283,7 @@ export function ItineraryMap({
   if (mappableBlocks.length === 0) {
     return (
       <div className="relative w-full h-full">
-        <Map
+        <MapGL
           ref={mapRef}
           mapboxAccessToken={MAPBOX_TOKEN}
           mapStyle="mapbox://styles/mapbox/light-v11"
@@ -222,11 +318,56 @@ export function ItineraryMap({
     );
   }
 
-  let markerIndex = 0;
+  // Build marker data: assign indices and group co-located blocks
+  const markerData = useMemo(() => {
+    // Assign sequential index to each mappable block
+    const indexed = mappableBlocks.map((block, i) => ({
+      block,
+      index: i + 1,
+    }));
+
+    // Group by coordinate key (rounded to ~11m precision to catch same-location blocks)
+    const coordKey = (lat: number, lng: number) =>
+      `${lat.toFixed(4)},${lng.toFixed(4)}`;
+
+    const groups = new Map<string, typeof indexed>();
+    for (const item of indexed) {
+      const key = coordKey(item.block.location_lat!, item.block.location_lng!);
+      const existing = groups.get(key);
+      if (existing) {
+        existing.push(item);
+      } else {
+        groups.set(key, [item]);
+      }
+    }
+
+    // For each group, render only the first block's marker but with all indices
+    const markers: { block: ItineraryBlock; index: number; additionalIndices: number[]; key: string }[] = [];
+    const rendered = new Set<string>();
+
+    for (const item of indexed) {
+      const key = coordKey(item.block.location_lat!, item.block.location_lng!);
+      if (rendered.has(key)) continue;
+      rendered.add(key);
+
+      const group = groups.get(key)!;
+      const primary = group[0];
+      const additional = group.slice(1).map((g) => g.index);
+
+      markers.push({
+        block: primary.block,
+        index: primary.index,
+        additionalIndices: additional,
+        key: key,
+      });
+    }
+
+    return markers;
+  }, [mappableBlocks]);
 
   return (
     <div className="relative w-full h-full">
-      <Map
+      <MapGL
         ref={mapRef}
         mapboxAccessToken={MAPBOX_TOKEN}
         mapStyle="mapbox://styles/mapbox/light-v11"
@@ -240,6 +381,7 @@ export function ItineraryMap({
         terrain={{ source: "mapbox-dem", exaggeration: 1.5 }}
         onLoad={handleMapLoad}
         onClick={() => setPopupBlockId(null)}
+        onZoom={(e) => setZoom(e.viewState.zoom)}
         attributionControl={false}
         style={{ width: "100%", height: "100%" }}
       >
@@ -263,25 +405,44 @@ export function ItineraryMap({
           }}
         />
 
-        <RouteLayer blocks={mappableBlocks} />
+        <RouteLayer blocks={mappableBlocks} stayCoords={stayLat && stayLng ? [stayLng, stayLat] : undefined} />
 
-        {mappableBlocks.map((block) => {
-          markerIndex++;
-          return (
-            <PixelMapMarker
-              key={block.id}
-              block={block}
-              index={markerIndex}
-              isActive={block.id === activeBlockId || block.id === popupBlockId}
-              onClick={handleMarkerClick}
+        {markerData.map((m) => (
+          <PixelMapMarker
+            key={m.key}
+            block={m.block}
+            index={m.index}
+            additionalIndices={m.additionalIndices}
+            isActive={m.block.id === activeBlockId || m.block.id === popupBlockId}
+            onClick={handleMarkerClick}
+          />
+        ))}
+
+        {/* Stay marker */}
+        {stayLat && stayLng && stayAddress && (
+          <StayMapMarker
+            lat={stayLat}
+            lng={stayLng}
+            address={stayAddress}
+          />
+        )}
+
+        {/* Route labels at segment midpoints */}
+        {zoom >= 11 && routeSegments.map((seg, i) => (
+          seg.distance > 0 && (
+            <RouteLabel
+              key={`route-label-${i}`}
+              longitude={seg.midpoint[0]}
+              latitude={seg.midpoint[1]}
+              distance={formatDistance(seg.distance, unit)}
             />
-          );
-        })}
+          )
+        ))}
 
         {popupBlock && (
           <MapPopup block={popupBlock} onClose={() => setPopupBlockId(null)} />
         )}
-      </Map>
+      </MapGL>
 
       <MapDaySelector
         dayCount={dayCount}

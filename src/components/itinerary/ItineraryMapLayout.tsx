@@ -114,8 +114,11 @@ export function ItineraryMapLayout({ tripId }: ItineraryMapLayoutProps) {
       dayCount: days.length,
       activeDayIndex,
       onDaySelect: handleDaySelect,
+      stayLat: trip?.stay_lat,
+      stayLng: trip?.stay_lng,
+      stayAddress: trip?.stay_address,
     }),
-    [activeDayBlocks, activeBlockId, handleBlockSelect, days.length, activeDayIndex, handleDaySelect]
+    [activeDayBlocks, activeBlockId, handleBlockSelect, days.length, activeDayIndex, handleDaySelect, trip?.stay_lat, trip?.stay_lng, trip?.stay_address]
   );
 
   return (

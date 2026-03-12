@@ -5,14 +5,27 @@ import type { ItineraryBlock } from "@/types/itinerary";
 
 interface RouteLayerProps {
   blocks: ItineraryBlock[];
+  stayCoords?: [number, number]; // [lng, lat]
 }
 
-export function RouteLayer({ blocks }: RouteLayerProps) {
+export function RouteLayer({ blocks, stayCoords }: RouteLayerProps) {
   const coords = blocks
     .filter((b) => b.location_lat && b.location_lng)
     .map((b) => [b.location_lng!, b.location_lat!]);
 
-  if (coords.length < 2) return null;
+  if (coords.length < 2 && !stayCoords) return null;
+
+  // Build route: stay → activities → stay
+  const routeCoords: number[][] = [];
+  if (stayCoords && coords.length > 0) {
+    routeCoords.push(stayCoords);
+  }
+  routeCoords.push(...coords);
+  if (stayCoords && coords.length > 0) {
+    routeCoords.push(stayCoords);
+  }
+
+  if (routeCoords.length < 2) return null;
 
   const geojson: GeoJSON.FeatureCollection = {
     type: "FeatureCollection",
@@ -22,7 +35,7 @@ export function RouteLayer({ blocks }: RouteLayerProps) {
         properties: {},
         geometry: {
           type: "LineString",
-          coordinates: coords,
+          coordinates: routeCoords,
         },
       },
     ],

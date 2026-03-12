@@ -2,7 +2,7 @@
 
 import { Popup } from "react-map-gl/mapbox";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, DollarSign } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ItineraryBlock } from "@/types/itinerary";
 
@@ -57,12 +57,14 @@ export function MapPopup({ block, onClose }: MapPopupProps) {
             <span className="truncate">{block.location}</span>
           </div>
         )}
-        {block.cost_estimate != null && block.cost_estimate > 0 && (
-          <div className="flex items-center gap-1 text-[10px] text-rock">
-            <DollarSign className="w-3 h-3" />
-            {block.cost_estimate} {block.currency}
-          </div>
-        )}
+        {block.cost_estimate != null && block.cost_estimate > 0 && (() => {
+          const signs = block.cost_estimate! <= 15 ? "$" : block.cost_estimate! <= 40 ? "$$" : block.cost_estimate! <= 100 ? "$$$" : "$$$$";
+          return (
+            <span className="inline-flex items-center text-[10px] font-[family-name:var(--font-silkscreen)] text-white bg-grass border-[2px] border-night px-1.5 py-0.5">
+              {signs}
+            </span>
+          );
+        })()}
       </div>
     </Popup>
   );

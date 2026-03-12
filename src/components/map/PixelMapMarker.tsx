@@ -16,6 +16,8 @@ const typeColors: Record<string, string> = {
 interface PixelMapMarkerProps {
   block: ItineraryBlock;
   index: number;
+  /** Additional indices to show when multiple blocks share this location */
+  additionalIndices?: number[];
   isActive: boolean;
   onClick: (blockId: string) => void;
 }
@@ -23,12 +25,15 @@ interface PixelMapMarkerProps {
 export function PixelMapMarker({
   block,
   index,
+  additionalIndices,
   isActive,
   onClick,
 }: PixelMapMarkerProps) {
   if (!block.location_lat || !block.location_lng) return null;
 
   const color = typeColors[block.type] || typeColors.activity;
+  const allIndices = [index, ...(additionalIndices || [])];
+  const label = allIndices.join(", ");
 
   return (
     <Marker
@@ -42,14 +47,14 @@ export function PixelMapMarker({
     >
       <div
         className={cn(
-          "flex items-center justify-center w-8 h-8 border-[3px] border-night pixel-shadow-sm cursor-pointer transition-transform duration-100",
+          "flex items-center justify-center min-w-8 h-8 px-1 border-[3px] border-night pixel-shadow-sm cursor-pointer transition-transform duration-100",
           color,
           isActive && "scale-125 border-jam ring-2 ring-jam/50"
         )}
         title={block.title}
       >
         <span className="font-[family-name:var(--font-silkscreen)] text-[10px] font-bold leading-none">
-          {index}
+          {label}
         </span>
       </div>
     </Marker>

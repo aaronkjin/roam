@@ -15,6 +15,9 @@ export interface Trip {
   overall_rating: number | null;
   review_note: string | null;
   forked_from: string | null;
+  stay_address: string | null;
+  stay_lat: number | null;
+  stay_lng: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +42,9 @@ export interface UpdateTripInput {
   status?: TripStatus;
   overall_rating?: number;
   review_note?: string;
+  stay_address?: string;
+  stay_lat?: number;
+  stay_lng?: number;
 }
 
 export type CollaboratorRole = "owner" | "editor" | "viewer";

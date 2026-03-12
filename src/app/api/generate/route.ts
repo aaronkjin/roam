@@ -101,14 +101,14 @@ export async function POST(req: NextRequest) {
 
   // Stream response
   const stream = await openai.chat.completions.create({
-    model: "gpt-4",
+    model: "gpt-5.2",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userPrompt },
     ],
     stream: true,
     temperature: mode === "creative" ? 0.9 : 0.3,
-    max_tokens: 4000,
+    max_completion_tokens: 6000,
   });
 
   const encoder = new TextEncoder();

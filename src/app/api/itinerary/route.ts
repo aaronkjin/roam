@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuth, requireTripAccess } from "@/lib/auth";
+import { fetchPexelsImage, buildFallbackQueries } from "@/lib/pexels";
 
 // GET itinerary for a trip (days + blocks)
 export async function GET(req: NextRequest) {
@@ -69,31 +70,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Collect photo queries across all days and fetch in parallel
-  type PhotoJob = { dayIdx: number; blockIdx: number; query: string };
+  // Collect photo queries across all days and fetch with retry pipeline
+  type PhotoJob = { dayIdx: number; blockIdx: number; query: string; block: Record<string, unknown> };
   const jobs: PhotoJob[] = [];
   for (let d = 0; d < days.length; d++) {
     for (let b = 0; b < (days[d].blocks?.length ?? 0); b++) {
-      const q = days[d].blocks[b].photo_query;
-      if (q && typeof q === "string") jobs.push({ dayIdx: d, blockIdx: b, query: q });
+      const blk = days[d].blocks[b];
+      const q = blk.photo_query;
+      if (q && typeof q === "string") jobs.push({ dayIdx: d, blockIdx: b, query: q, block: blk });
     }
   }
 
-  const pexelsKey = process.env.PEXELS_API_KEY;
   const photoResults = await Promise.allSettled(
-    jobs.map(async ({ dayIdx, blockIdx, query }) => {
-      if (!pexelsKey) return { dayIdx, blockIdx, imageUrl: null };
-      try {
-        const res = await fetch(
-          `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`,
-          { headers: { Authorization: pexelsKey } }
-        );
-        if (!res.ok) return { dayIdx, blockIdx, imageUrl: null };
-        const data = await res.json();
-        return { dayIdx, blockIdx, imageUrl: data.photos?.[0]?.src?.large ?? null };
-      } catch {
-        return { dayIdx, blockIdx, imageUrl: null };
-      }
+    jobs.map(async ({ dayIdx, blockIdx, query, block }) => {
+      const fallbacks = buildFallbackQueries(
+        (block.title as string) || "",
+        (block.type as string) || "activity",
+        (block.location as string) || null,
+      );
+      const imageUrl = await fetchPexelsImage(query, fallbacks);
+      return { dayIdx, blockIdx, imageUrl };
     })
   );
 

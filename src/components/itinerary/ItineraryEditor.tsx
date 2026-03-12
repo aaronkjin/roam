@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -14,15 +14,18 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { useItinerary } from "@/hooks/useItinerary";
+import { useBlockAIEdit } from "@/hooks/useBlockAIEdit";
 import { useTrips } from "@/context/TripsContext";
 import { DaySection } from "./DaySection";
+import { InlineAIEdit } from "./InlineAIEdit";
+import { BlockDiffPreview } from "./BlockDiffPreview";
 import { ShareMenu } from "./ShareMenu";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Sparkles, PenTool } from "lucide-react";
 import Link from "next/link";
-import type { CreateBlockInput, UpdateBlockInput } from "@/types/itinerary";
+import type { CreateBlockInput, UpdateBlockInput, ItineraryBlock } from "@/types/itinerary";
 
 type ItineraryHookReturn = ReturnType<typeof useItinerary>;
 
@@ -62,6 +65,33 @@ export function ItineraryEditor({
   const canEdit = userRole === "owner";
   const itineraryRef = useRef<HTMLDivElement>(null);
 
+  // AI edit hook
+  const aiEdit = useBlockAIEdit(tripId);
+
+  // Cmd+K keyboard shortcut for AI edit
+  useEffect(() => {
+    if (!canEdit) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        if (aiEdit.isSelectMode && aiEdit.selectedBlockIds.size > 0) {
+          // Already in select mode with blocks selected — focus is on the input
+          return;
+        }
+        if (aiEdit.isSelectMode) {
+          aiEdit.clearSelection();
+        } else {
+          aiEdit.enterSelectMode();
+        }
+      }
+      if (e.key === "Escape" && aiEdit.isSelectMode) {
+        aiEdit.clearSelection();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [canEdit, aiEdit]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -76,7 +106,6 @@ export function ItineraryEditor({
       const { active, over } = event;
       if (!over || active.id === over.id) return;
 
-      // Find which day contains the active and over blocks
       let sourceDayIdx = -1;
       let sourceBlockIdx = -1;
       let destBlockIdx = -1;
@@ -95,7 +124,6 @@ export function ItineraryEditor({
 
       if (sourceDayIdx === -1 || sourceBlockIdx === -1) return;
 
-      // Reorder within same day
       const newDays = [...days];
       const day = { ...newDays[sourceDayIdx] };
       const blocks = [...day.blocks];
@@ -105,7 +133,6 @@ export function ItineraryEditor({
       newDays[sourceDayIdx] = day;
       setDays(newDays);
 
-      // Send reorder to API
       const updates = blocks.map((b, i) => ({
         id: b.id,
         position_index: i,
@@ -143,6 +170,79 @@ export function ItineraryEditor({
     },
     [deleteDay]
   );
+
+  // AI edit handlers
+  const handleAISubmit = useCallback(
+    (instruction: string) => {
+      // Gather context blocks (2 before and 2 after selection within same day)
+      const allBlocks = days.flatMap((d) => d.blocks);
+      const selectedIds = aiEdit.selectedBlockIds;
+      const contextBlocks: ItineraryBlock[] = [];
+
+      for (const day of days) {
+        const selectedInDay = day.blocks.filter((b) => selectedIds.has(b.id));
+        if (selectedInDay.length === 0) continue;
+
+        const firstIdx = day.blocks.findIndex((b) => selectedIds.has(b.id));
+        const lastIdx = day.blocks.length - 1 - [...day.blocks].reverse().findIndex((b) => selectedIds.has(b.id));
+
+        for (let i = Math.max(0, firstIdx - 2); i < firstIdx; i++) {
+          if (!selectedIds.has(day.blocks[i].id)) {
+            contextBlocks.push(day.blocks[i]);
+          }
+        }
+        for (let i = lastIdx + 1; i <= Math.min(day.blocks.length - 1, lastIdx + 2); i++) {
+          if (!selectedIds.has(day.blocks[i].id)) {
+            contextBlocks.push(day.blocks[i]);
+          }
+        }
+      }
+
+      aiEdit.submitEdit(instruction, contextBlocks);
+    },
+    [days, aiEdit]
+  );
+
+  const handleAcceptSuggestion = useCallback(
+    (blockId: string, suggestion: import("@/hooks/useBlockAIEdit").BlockEditSuggestion) => {
+      const updates: UpdateBlockInput = {};
+      if (suggestion.title) updates.title = suggestion.title;
+      if (suggestion.description) updates.description = suggestion.description;
+      if (suggestion.start_time) updates.start_time = suggestion.start_time;
+      if (suggestion.end_time) updates.end_time = suggestion.end_time;
+      if (suggestion.duration_minutes) updates.duration_minutes = suggestion.duration_minutes;
+      if (suggestion.location) updates.location = suggestion.location;
+      if (suggestion.location_lat) updates.location_lat = suggestion.location_lat;
+      if (suggestion.location_lng) updates.location_lng = suggestion.location_lng;
+      if (suggestion.cost_estimate !== undefined) updates.cost_estimate = suggestion.cost_estimate;
+      updateBlock(blockId, updates);
+      aiEdit.acceptSuggestion(blockId);
+    },
+    [updateBlock, aiEdit]
+  );
+
+  const handleAcceptAll = useCallback(() => {
+    const accepted = aiEdit.acceptAll();
+    for (const suggestion of accepted) {
+      const updates: UpdateBlockInput = {};
+      if (suggestion.title) updates.title = suggestion.title;
+      if (suggestion.description) updates.description = suggestion.description;
+      if (suggestion.start_time) updates.start_time = suggestion.start_time;
+      if (suggestion.end_time) updates.end_time = suggestion.end_time;
+      if (suggestion.duration_minutes) updates.duration_minutes = suggestion.duration_minutes;
+      if (suggestion.location) updates.location = suggestion.location;
+      if (suggestion.location_lat) updates.location_lat = suggestion.location_lat;
+      if (suggestion.location_lng) updates.location_lng = suggestion.location_lng;
+      if (suggestion.cost_estimate !== undefined) updates.cost_estimate = suggestion.cost_estimate;
+      updateBlock(suggestion.id, updates);
+    }
+    aiEdit.clearSelection();
+  }, [updateBlock, aiEdit]);
+
+  // Get original blocks for diff preview
+  const selectedOriginalBlocks = days
+    .flatMap((d) => d.blocks)
+    .filter((b) => aiEdit.selectedBlockIds.has(b.id));
 
   if (loading) {
     return (
@@ -187,6 +287,17 @@ export function ItineraryEditor({
             {days.length} day{days.length !== 1 ? "s" : ""} &bull;{" "}
             {days.reduce((sum, d) => sum + d.blocks.length, 0)} blocks
           </span>
+          {canEdit && !aiEdit.isSelectMode && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => aiEdit.enterSelectMode()}
+              title="Select blocks for AI edit (Cmd+K)"
+            >
+              <Sparkles className="w-3.5 h-3.5 mr-1" />
+              AI Edit
+            </Button>
+          )}
           <ShareMenu
             tripId={tripId}
             tripTitle={trip?.title || "My Trip"}
@@ -200,6 +311,18 @@ export function ItineraryEditor({
           />
         </div>
       </div>
+
+      {/* AI edit diff preview */}
+      {aiEdit.suggestions.length > 0 && (
+        <BlockDiffPreview
+          originalBlocks={selectedOriginalBlocks}
+          suggestions={aiEdit.suggestions}
+          onAccept={handleAcceptSuggestion}
+          onReject={(blockId) => aiEdit.rejectSuggestion(blockId)}
+          onAcceptAll={handleAcceptAll}
+          onRejectAll={() => { aiEdit.rejectAll(); aiEdit.clearSelection(); }}
+        />
+      )}
 
       <div ref={itineraryRef}>
         <DndContext
@@ -222,11 +345,25 @@ export function ItineraryEditor({
                 activeBlockId={activeBlockId ?? null}
                 onBlockHover={onBlockHover}
                 canEdit={canEdit}
+                isSelectMode={aiEdit.isSelectMode}
+                selectedBlockIds={aiEdit.selectedBlockIds}
+                onToggleBlockSelect={aiEdit.toggleBlockSelection}
               />
             ))}
           </div>
         </DndContext>
       </div>
+
+      {/* Inline AI edit prompt */}
+      {aiEdit.isSelectMode && aiEdit.suggestions.length === 0 && (
+        <InlineAIEdit
+          selectedCount={aiEdit.selectedBlockIds.size}
+          loading={aiEdit.loading}
+          error={aiEdit.error}
+          onSubmit={handleAISubmit}
+          onCancel={() => aiEdit.clearSelection()}
+        />
+      )}
     </div>
   );
 }
