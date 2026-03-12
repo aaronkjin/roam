@@ -131,7 +131,7 @@ function TripTimingModal({
 }
 
 export function GeneratePanel({ tripId }: GeneratePanelProps) {
-  const { trips: allTrips, updateTrip } = useTrips();
+  const { trips: allTrips, updateTrip, fetchTrips } = useTrips();
   const tripData = allTrips.find((t) => t.id === tripId);
   const userRole = tripData && "userRole" in tripData ? (tripData as TripWithRole).userRole : "owner";
   const canEdit = userRole === "owner" || userRole === "editor";
@@ -218,13 +218,14 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
 
       if (!res.ok) throw new Error("Failed to save itinerary");
 
+      await fetchTrips();
       router.push(`/trip/${tripId}/itinerary`);
     } catch {
       // error handling
     } finally {
       setAccepting(false);
     }
-  }, [result, tripId, router]);
+  }, [fetchTrips, result, tripId, router]);
 
   if (inspoLoading) {
     return (
@@ -313,13 +314,6 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
             <div className="flex flex-wrap items-end gap-6">
               <div>
                 <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
-                  Mode
-                </label>
-                <ModeToggle mode={mode} onModeChange={setMode} />
-              </div>
-
-              <div>
-                <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
                   Days
                 </label>
                 <Input
@@ -365,6 +359,34 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
                 placeholder="e.g. The one thing I really want to do is a tea ceremony. I also want one quiet afternoon and minimal early mornings."
                 rows={3}
               />
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
+                  Mode
+                </label>
+                <ModeToggle mode={mode} onModeChange={setMode} />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className={`p-3 border-[2px] ${mode === "strict" ? "border-jam bg-jam/5" : "border-night/10"}`}>
+                  <p className="text-xs font-[family-name:var(--font-silkscreen)] uppercase text-jam mb-1">
+                    Strict Mode
+                  </p>
+                  <p className="text-[10px] text-rock">
+                    Includes ALL your exact inspo spots. Perfect when you know exactly where you want to go.
+                  </p>
+                </div>
+                <div className={`p-3 border-[2px] ${mode === "creative" ? "border-grass bg-grass/5" : "border-night/10"}`}>
+                  <p className="text-xs font-[family-name:var(--font-silkscreen)] uppercase text-grass mb-1">
+                    Creative Mode
+                  </p>
+                  <p className="text-[10px] text-rock">
+                    Uses your inspo as vibes, adds hidden gems and surprises. Great for discovering new spots.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-3 border-[2px] border-night/10 p-3">
@@ -426,25 +448,6 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
             </div>
           </div>
 
-          {/* Mode descriptions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className={`p-3 border-[2px] ${mode === "strict" ? "border-jam bg-jam/5" : "border-night/10"}`}>
-              <p className="text-xs font-[family-name:var(--font-silkscreen)] uppercase text-jam mb-1">
-                Strict Mode
-              </p>
-              <p className="text-[10px] text-rock">
-                Includes ALL your exact inspo spots. Perfect when you know exactly where you want to go.
-              </p>
-            </div>
-            <div className={`p-3 border-[2px] ${mode === "creative" ? "border-grass bg-grass/5" : "border-night/10"}`}>
-              <p className="text-xs font-[family-name:var(--font-silkscreen)] uppercase text-grass mb-1">
-                Creative Mode
-              </p>
-              <p className="text-[10px] text-rock">
-                Uses your inspo as vibes, adds hidden gems and surprises. Great for discovering new spots.
-              </p>
-            </div>
-          </div>
         </>
       )}
 

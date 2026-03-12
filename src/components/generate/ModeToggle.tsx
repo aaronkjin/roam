@@ -12,7 +12,7 @@ interface ModeToggleProps {
 
 export function ModeToggle({ mode, onModeChange, disabled }: ModeToggleProps) {
   return (
-    <div className="flex border-[3px] border-night">
+    <div className="inline-flex w-fit border-[3px] border-night">
       <button
         type="button"
         onClick={() => onModeChange("strict")}
