@@ -45,7 +45,7 @@ export async function GET(
   // Get collaborators with user info
   const { data: collaborators, error: collabError } = await supabase
     .from("trip_collaborators")
-    .select("*, user:users(id, email, display_name, avatar_url)")
+    .select("*, user:users!trip_collaborators_user_id_fkey(id, email, display_name, avatar_url)")
     .eq("trip_id", tripId);
 
   if (collabError) {
@@ -167,7 +167,7 @@ export async function POST(
         invited_email: email,
         accepted_at: new Date().toISOString(),
       })
-      .select("*, user:users(id, email, display_name, avatar_url)")
+      .select("*, user:users!trip_collaborators_user_id_fkey(id, email, display_name, avatar_url)")
       .single();
 
     if (insertError) {
