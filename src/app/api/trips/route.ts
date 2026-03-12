@@ -64,7 +64,7 @@ export async function GET() {
     return NextResponse.json({ error: collabError.message }, { status: 500 });
   }
 
-  const sharedTrips = ((collabData || []) as CollaboratorTripRow[])
+  const sharedTrips = ((collabData || []) as unknown as CollaboratorTripRow[])
     .filter((c) => c.trips)
     .map((collab) => {
       const { inspo_items, ...trip } = collab.trips;
@@ -138,7 +138,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const { inspo_items, ...trip } = data as TripRowWithInspo;
+  const { inspo_items, ...trip } = data as unknown as TripRowWithInspo;
 
   return NextResponse.json({
     ...trip,
