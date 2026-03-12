@@ -10,7 +10,7 @@ import { MapPopup } from "./MapPopup";
 import { MapControls } from "./MapControls";
 import { MapDaySelector } from "./MapDaySelector";
 import { MapPin } from "lucide-react";
-import { midpoint, formatDistance } from "@/lib/geo";
+import { midpoint, haversine, formatDistance } from "@/lib/geo";
 import { useDistanceUnit } from "@/context/DistanceUnitContext";
 import type { ItineraryBlock } from "@/types/itinerary";
 
@@ -86,6 +86,7 @@ export function ItineraryMap({
         const to = mappableBlocks[i + 1];
         const mid = midpoint(from.location_lat!, from.location_lng!, to.location_lat!, to.location_lng!);
 
+        const fallbackDist = haversine(from.location_lat!, from.location_lng!, to.location_lat!, to.location_lng!);
         promises.push(
           fetch(
             `/api/directions?origin_lat=${from.location_lat}&origin_lng=${from.location_lng}&dest_lat=${to.location_lat}&dest_lng=${to.location_lng}&profile=driving`
@@ -96,14 +97,14 @@ export function ItineraryMap({
               from: { lat: from.location_lat!, lng: from.location_lng! },
               to: { lat: to.location_lat!, lng: to.location_lng! },
               midpoint: mid,
-              distance: data?.distance_meters ?? 0,
+              distance: data?.distance_meters ?? fallbackDist,
             }))
             .catch(() => ({
               index: i,
               from: { lat: from.location_lat!, lng: from.location_lng! },
               to: { lat: to.location_lat!, lng: to.location_lng! },
               midpoint: mid,
-              distance: 0,
+              distance: fallbackDist,
             }))
         );
       }

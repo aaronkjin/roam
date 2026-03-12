@@ -280,35 +280,39 @@ export function ItineraryEditor({
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base">Your Itinerary</h2>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-rock font-[family-name:var(--font-silkscreen)]">
-            {days.length} day{days.length !== 1 ? "s" : ""} &bull;{" "}
-            {days.reduce((sum, d) => sum + d.blocks.length, 0)} blocks
-          </span>
-          {canEdit && !aiEdit.isSelectMode && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => aiEdit.enterSelectMode()}
-              title="Select blocks for AI edit (Cmd+K)"
-            >
-              <Sparkles className="w-3.5 h-3.5 mr-1" />
-              AI Edit
-            </Button>
-          )}
-          <ShareMenu
-            tripId={tripId}
-            tripTitle={trip?.title || "My Trip"}
-            tripDestination={trip?.destination}
-            startDate={trip?.start_date}
-            endDate={trip?.end_date}
-            dateRangeLabel={trip?.date_range_label}
-            days={days}
-            itineraryRef={itineraryRef}
-            userRole={trip && "userRole" in trip ? (trip as import("@/types/trip").TripWithRole).userRole : "owner"}
-          />
+      <div className="space-y-2">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base">Your Itinerary</h2>
+            <span className="text-xs text-rock font-[family-name:var(--font-silkscreen)]">
+              {days.length} day{days.length !== 1 ? "s" : ""} &bull;{" "}
+              {days.reduce((sum, d) => sum + d.blocks.length, 0)} blocks
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {canEdit && !aiEdit.isSelectMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => aiEdit.enterSelectMode()}
+                title="Select blocks for AI edit (Cmd+K)"
+              >
+                <Sparkles className="w-3.5 h-3.5 mr-1" />
+                AI Edit
+              </Button>
+            )}
+            <ShareMenu
+              tripId={tripId}
+              tripTitle={trip?.title || "My Trip"}
+              tripDestination={trip?.destination}
+              startDate={trip?.start_date}
+              endDate={trip?.end_date}
+              dateRangeLabel={trip?.date_range_label}
+              days={days}
+              itineraryRef={itineraryRef}
+              userRole={trip && "userRole" in trip ? (trip as import("@/types/trip").TripWithRole).userRole : "owner"}
+            />
+          </div>
         </div>
       </div>
 
