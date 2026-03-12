@@ -62,12 +62,6 @@ export function PublishedItineraryView({
     );
   }
 
-  const tripTiming = formatTripDateRange({
-    startDate: published.start_date,
-    endDate: published.end_date,
-    dateRangeLabel: published.date_range_label,
-  });
-
   if (error || !published) {
     return (
       <div className="py-8">
@@ -84,6 +78,12 @@ export function PublishedItineraryView({
       </div>
     );
   }
+
+  const tripTiming = formatTripDateRange({
+    startDate: published.start_date,
+    endDate: published.end_date,
+    dateRangeLabel: published.date_range_label,
+  });
 
   return (
     <div className="space-y-6">
