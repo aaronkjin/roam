@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { VisuallyHidden } from "radix-ui";
-import { Newspaper } from "lucide-react";
+import { Heart, Newspaper } from "lucide-react";
 
 interface FeedPageProps {
   initialTab?: "discover" | "saved";
@@ -50,7 +50,11 @@ export function FeedPage({ initialTab = "discover" }: FeedPageProps) {
       {/* Header */}
       <div className="space-y-1">
         <h1 className="font-[family-name:var(--font-press-start)] text-lg text-night flex items-center gap-3">
-          <Newspaper className="w-6 h-6" />
+          {isSavedView ? (
+            <Heart className="w-6 h-6" />
+          ) : (
+            <Newspaper className="w-6 h-6" />
+          )}
           {isSavedView ? "Itineraries You Saved" : "Feed"}
         </h1>
         <p className="text-sm text-rock font-[family-name:var(--font-roboto-mono)]">
