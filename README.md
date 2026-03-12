@@ -1,6 +1,6 @@
 # Roam
 
-A travel-planning web app for Gen Z with a pixel-art aesthetic.
+Make your inspos into a trip
 
 ![Demo](docs/demo.gif)
 
