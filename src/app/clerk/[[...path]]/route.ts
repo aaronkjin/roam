@@ -50,20 +50,30 @@ async function proxy(
   });
 
   const headers = new Headers(request.headers);
-  headers.delete("host");
+  headers.set("host", "clerk.tryroam.xyz");
+  headers.set("x-forwarded-host", request.headers.get("host") || "tryroam.xyz");
+  headers.set("x-forwarded-proto", "https");
 
-  const response = await fetch(url.toString(), {
-    method: request.method,
-    headers,
-    body: request.method !== "GET" && request.method !== "HEAD" ? await request.text() : undefined,
-  });
+  try {
+    const response = await fetch(url.toString(), {
+      method: request.method,
+      headers,
+      body: request.method !== "GET" && request.method !== "HEAD" ? await request.text() : undefined,
+    });
 
-  const responseHeaders = new Headers(response.headers);
-  responseHeaders.delete("content-encoding");
+    const responseHeaders = new Headers(response.headers);
+    responseHeaders.delete("content-encoding");
 
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: responseHeaders,
-  });
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders,
+    });
+  } catch (error) {
+    console.error("[clerk-proxy] Fetch failed:", error);
+    return new Response(JSON.stringify({ error: "Proxy request failed" }), {
+      status: 502,
+      headers: { "content-type": "application/json" },
+    });
+  }
 }
