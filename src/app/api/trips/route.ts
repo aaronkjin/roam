@@ -67,7 +67,7 @@ export async function GET() {
   const sharedTrips = ((collabData || []) as unknown as CollaboratorTripRow[])
     .filter((c) => c.trips)
     .map((collab) => {
-      const { inspo_items, ...trip } = collab.trips;
+      const { inspo_items, ...trip } = collab.trips!;
       return {
         ...trip,
         cover_image_url:
