@@ -31,6 +31,12 @@ interface SidebarProps {
   onToggleCollapse?: () => void;
 }
 
+const tripSectionStyles: Record<string, string> = {
+  Planning: "text-sky",
+  Generated: "text-grass",
+  Completed: "text-jam",
+};
+
 export function Sidebar({
   ownTrips,
   sharedTrips,
@@ -40,9 +46,26 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
 
-  const activeOwn = ownTrips.filter((t) => t.status !== "archived");
+  const sortByUpdatedAt = (a: TripWithRole, b: TripWithRole) =>
+    new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+
+  const planningOwn = ownTrips
+    .filter((t) => t.status === "planning")
+    .sort(sortByUpdatedAt);
+  const generatedOwn = ownTrips
+    .filter((t) => t.status === "generated" || t.status === "finalized")
+    .sort(sortByUpdatedAt);
+  const completedOwn = ownTrips
+    .filter((t) => t.status === "completed")
+    .sort(sortByUpdatedAt);
   const archivedOwn = ownTrips.filter((t) => t.status === "archived");
   const activeShared = sharedTrips.filter((t) => t.status !== "archived");
+
+  const ownTripSections = [
+    { label: "Planning", trips: planningOwn },
+    { label: "Generated", trips: generatedOwn },
+    { label: "Completed", trips: completedOwn },
+  ].filter((section) => section.trips.length > 0);
 
   return (
     <aside
@@ -187,43 +210,68 @@ export function Sidebar({
 
         {collapsed && <div className="mt-4" />}
 
-        {activeOwn.map((trip) => {
-          const isActive = pathname.startsWith(`/trip/${trip.id}`);
-          return collapsed ? (
-            <Tooltip key={trip.id}>
-              <TooltipTrigger asChild>
-                <Link
-                  href={`/trip/${trip.id}`}
+        {collapsed ? (
+          ownTripSections.flatMap((section) =>
+            section.trips.map((trip) => {
+              const isActive = pathname.startsWith(`/trip/${trip.id}`);
+              return (
+                <Tooltip key={trip.id}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={`/trip/${trip.id}`}
+                      className={cn(
+                        "flex items-center justify-center p-2 transition-colors border-[2px] border-transparent mb-1",
+                        isActive
+                          ? "bg-mist border-night text-night"
+                          : "text-rock hover:text-night hover:bg-sky/20"
+                      )}
+                    >
+                      <Map className="w-4 h-4" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {section.label}: {trip.title}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })
+          )
+        ) : (
+          ownTripSections.map((section) => (
+            <div key={section.label} className="mb-3">
+              <div className="px-3 py-1">
+                <span
                   className={cn(
-                    "flex items-center justify-center p-2 transition-colors border-[2px] border-transparent mb-1",
-                    isActive
-                      ? "bg-mist border-night text-night"
-                      : "text-rock hover:text-night hover:bg-sky/20"
+                    "text-xs font-[family-name:var(--font-silkscreen)] uppercase tracking-wide",
+                    tripSectionStyles[section.label] || "text-rock"
                   )}
                 >
-                  <Map className="w-4 h-4" />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">{trip.title}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <Link
-              key={trip.id}
-              href={`/trip/${trip.id}`}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2 text-sm font-[family-name:var(--font-roboto-mono)] transition-colors border-[2px] border-transparent mb-1",
-                isActive
-                  ? "bg-mist border-night text-night"
-                  : "text-rock hover:text-night hover:bg-sky/20"
-              )}
-            >
-              <Map className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{trip.title}</span>
-            </Link>
-          );
-        })}
+                  {section.label}
+                </span>
+              </div>
+              {section.trips.map((trip) => {
+                const isActive = pathname.startsWith(`/trip/${trip.id}`);
+                return (
+                  <Link
+                    key={trip.id}
+                    href={`/trip/${trip.id}`}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 text-sm font-[family-name:var(--font-roboto-mono)] transition-colors border-[2px] border-transparent mb-1",
+                      isActive
+                        ? "bg-mist border-night text-night"
+                        : "text-rock hover:text-night hover:bg-sky/20"
+                    )}
+                  >
+                    <Map className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{trip.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          ))
+        )}
 
-        {activeOwn.length === 0 && !collapsed && (
+        {ownTripSections.length === 0 && !collapsed && (
           <p className="px-3 py-2 text-xs text-rock font-[family-name:var(--font-silkscreen)]">
             No trips yet. Start exploring!
           </p>
