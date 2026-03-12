@@ -29,7 +29,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const publishedItems = ((saves || []) as SavedFeedRow[])
+  const publishedItems = ((saves || []) as unknown as SavedFeedRow[])
     .filter((save): save is SavedFeedRow & { published: PublishedItinerary } => !!save.published)
     .map((save) => save.published);
 
