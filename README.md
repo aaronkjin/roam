@@ -1,21 +1,28 @@
 # Roam
 
-An idea-curation, travel-planning web app
+A travel-planning web app for Gen Z with a pixel-art aesthetic.
 
 ![Demo](docs/demo.gif)
 
 ## What it does
 
-- Collect travel inspiration (links, TikToks, reels, articles, images)
-- Generate AI trip plans from inspo (strict or creative)
-- Edit itineraries in a block-style editor
+- Collect travel inspo (links, TikToks, reels, articles, images)
+- Generate AI itineraries from inspo (strict or creative mode)
+- Edit itineraries in a block-style editor with drag-and-drop
+- View activities on an interactive Mapbox map with route distances
+- Inline AI editing of itinerary blocks (Cmd+K)
+- Multi-user collaboration with role-based access (owner/editor/viewer)
+- Share itineraries via public link or invite
+- Rate and review completed trips
 
 ## Stack
 
-- Next.js + TypeScript
-- Tailwind CSS + shadcn/ui
-- Supabase (Postgres/Auth/Storage)
-- OpenAI API
+- Next.js 16 (App Router) + TypeScript
+- Tailwind CSS v4 + shadcn/ui
+- Supabase (PostgreSQL)
+- OpenAI GPT-5.2
+- Clerk (auth)
+- Mapbox GL (maps + directions)
 
 ## Quick start
 
@@ -34,20 +41,14 @@ Required in `.env.local`:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `OPENAI_API_KEY`
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+- `NEXT_PUBLIC_MAPBOX_TOKEN`
+- `PEXELS_API_KEY`
 
-## Flow (in progress)
+## Flow
 
-`/dashboard` -> create trip -> add inspo -> generate itinerary -> accept and edit itinerary
-
-## Next steps
-
-1. Auth
-2. Sharing
-3. Group collab
-4. Media upload
-5. Maps
-6. Export
-7. Booking integrations
+Dashboard → create trip → add inspo → generate itinerary → edit & share
 
 ## Verify
 
