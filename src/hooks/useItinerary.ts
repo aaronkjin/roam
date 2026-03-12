@@ -27,6 +27,13 @@ export function useItinerary(tripId: string) {
 
   useEffect(() => {
     fetchItinerary();
+    return () => {
+      // Clear all pending save timers on unmount
+      for (const timer of saveTimersRef.current.values()) {
+        clearTimeout(timer);
+      }
+      saveTimersRef.current.clear();
+    };
   }, [fetchItinerary]);
 
   const addBlock = useCallback(
@@ -174,9 +181,10 @@ export function useItinerary(tripId: string) {
         if (!res.ok) throw new Error("Failed to update day");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
+        fetchItinerary(); // Revert on error
       }
     },
-    []
+    [fetchItinerary]
   );
 
   return {

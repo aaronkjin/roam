@@ -109,6 +109,12 @@ const VERIFIED_COORDS: Record<string, [number, number]> = {
  * Updates all blocks with web-verified coordinates matched by title.
  */
 export async function POST() {
+  const { requireAuth } = await import("@/lib/auth");
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = await createClient();
 
   // Fetch ALL blocks (not just those missing coords — overwrite bad ones too)

@@ -62,7 +62,7 @@ export function ItineraryEditor({
   const { trips } = useTrips();
   const trip = trips.find((t) => t.id === tripId);
   const userRole = trip && "userRole" in trip ? (trip as import("@/types/trip").TripWithRole).userRole : "owner";
-  const canEdit = userRole === "owner";
+  const canEdit = userRole === "owner" || userRole === "editor";
   const itineraryRef = useRef<HTMLDivElement>(null);
 
   // AI edit hook

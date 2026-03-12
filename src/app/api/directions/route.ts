@@ -24,6 +24,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing coordinates" }, { status: 400 });
   }
 
+  const lats = [originLat, destLat].map(Number);
+  const lngs = [originLng, destLng].map(Number);
+  if (lats.some((c) => isNaN(c) || c < -90 || c > 90) || lngs.some((l) => isNaN(l) || l < -180 || l > 180)) {
+    return NextResponse.json({ error: "Invalid coordinates" }, { status: 400 });
+  }
+
   if (!MAPBOX_TOKEN) {
     return NextResponse.json({ error: "Mapbox not configured" }, { status: 500 });
   }

@@ -33,9 +33,6 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; label
 
 function buildMapsUrl(block: ItineraryBlock): string | null {
   if (!block.location) return null;
-  if (block.location_lat && block.location_lng) {
-    return `https://maps.google.com/?q=${block.location_lat},${block.location_lng}`;
-  }
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(block.location)}`;
 }
 
@@ -97,6 +94,32 @@ function ReadOnlyBlock({
             </a>
           )}
         </div>
+      </div>
+    );
+  }
+
+  // Accommodation block — slim compact row (no photo)
+  if (block.type === "accommodation") {
+    return (
+      <div className="flex items-center gap-2 p-3 bg-moss/10 border-[3px] border-moss/30">
+        <Hotel className="w-4 h-4 text-moss shrink-0" />
+        <Badge className="text-[9px] bg-moss text-white shrink-0">Stay</Badge>
+        <span className="text-sm text-night truncate">{block.title}</span>
+        {block.start_time && (
+          <span className="text-[10px] font-[family-name:var(--font-silkscreen)] text-rock whitespace-nowrap">
+            {block.start_time}{block.end_time ? `–${block.end_time}` : ""}
+          </span>
+        )}
+        {mapsUrl && (
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] text-sky border-[2px] border-sky px-1.5 py-0.5 hover:bg-sky hover:text-night transition-colors ml-auto shrink-0"
+          >
+            <MapPin className="w-3 h-3" /> Maps
+          </a>
+        )}
       </div>
     );
   }

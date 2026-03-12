@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   const query = req.nextUrl.searchParams.get("q");
 
-  if (!query) {
-    return NextResponse.json({ error: "q parameter is required" }, { status: 400 });
+  if (!query || query.length > 500) {
+    return NextResponse.json({ error: "q parameter is required (max 500 chars)" }, { status: 400 });
   }
 
   const token = process.env.MAPBOX_SECRET_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN;

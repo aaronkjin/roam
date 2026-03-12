@@ -1,9 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 
+function isAllowedUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    // Block non-http(s) protocols
+    if (!["http:", "https:"].includes(parsed.protocol)) return false;
+    // Block private/internal IPs
+    const host = parsed.hostname;
+    if (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "0.0.0.0" ||
+      host.startsWith("10.") ||
+      host.startsWith("192.168.") ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+      host === "[::1]" ||
+      host.endsWith(".internal") ||
+      host.endsWith(".local")
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const url = req.nextUrl.searchParams.get("url");
   if (!url) {
     return NextResponse.json({ error: "Missing url param" }, { status: 400 });
+  }
+
+  if (!isAllowedUrl(url)) {
+    return NextResponse.json({ error: "URL not allowed" }, { status: 403 });
   }
 
   try {

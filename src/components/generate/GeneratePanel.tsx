@@ -134,7 +134,7 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
   const { trips: allTrips, updateTrip, fetchTrips } = useTrips();
   const tripData = allTrips.find((t) => t.id === tripId);
   const userRole = tripData && "userRole" in tripData ? (tripData as TripWithRole).userRole : "owner";
-  const canEdit = userRole === "owner";
+  const canEdit = userRole === "owner" || userRole === "editor";
   const router = useRouter();
   const { items, loading: inspoLoading } = useInspoItems(tripId);
   const { generating, streamedText, result, error, generate, reset } = useGenerate({ tripId });

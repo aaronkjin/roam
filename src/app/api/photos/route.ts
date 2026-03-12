@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
+  const authResult = await requireAuth();
+  if (!authResult) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const q = req.nextUrl.searchParams.get("q");
   if (!q) return NextResponse.json({ error: "q is required" }, { status: 400 });
 

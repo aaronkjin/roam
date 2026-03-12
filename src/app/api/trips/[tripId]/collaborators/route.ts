@@ -91,8 +91,8 @@ export async function POST(
   const body = await req.json();
   const { email, role } = body;
 
-  if (!email || typeof email !== "string") {
-    return NextResponse.json({ error: "email is required" }, { status: 400 });
+  if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320) {
+    return NextResponse.json({ error: "Valid email is required" }, { status: 400 });
   }
 
   if (!role || !["editor", "viewer"].includes(role)) {
