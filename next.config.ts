@@ -11,12 +11,16 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    return [
-      {
-        source: "/clerk/:path*",
-        destination: "https://frontend-api.clerk.services/:path*",
-      },
-    ];
+    return {
+      beforeFiles: [
+        {
+          source: "/clerk/:path*",
+          destination: "https://frontend-api.clerk.services/:path*",
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
   },
 };
 
