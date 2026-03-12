@@ -4,8 +4,6 @@ Make your inspos into a trip
 
 ![Demo](docs/demo.gif)
 
-Click [here](https://tryroam.xyz)
-
 ## What it does
 
 - Collect travel inspo (links, TikToks, reels, articles, images)
@@ -26,6 +24,33 @@ Click [here](https://tryroam.xyz)
 - Clerk (auth)
 - Mapbox GL (maps + directions)
 
+## Quick start
+
+```bash
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+## Environment
+
+Required in `.env.local`:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `OPENAI_API_KEY`
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+- `NEXT_PUBLIC_MAPBOX_TOKEN`
+- `PEXELS_API_KEY`
+
 ## Flow
 
-auth → dashboard → create trip → add inspo → generate itinerary → edit & share
+Dashboard → create trip → add inspo → generate itinerary → edit & share
+
+## Verify
+
+- `npm run dev`
+- `npm run build`
