@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Sparkles, PenTool } from "lucide-react";
 import Link from "next/link";
-import type { CreateBlockInput, UpdateBlockInput, ItineraryDay, ItineraryBlock } from "@/types/itinerary";
+import type { CreateBlockInput, UpdateBlockInput } from "@/types/itinerary";
 
 type ItineraryHookReturn = ReturnType<typeof useItinerary>;
 
@@ -193,6 +193,7 @@ export function ItineraryEditor({
             tripDestination={trip?.destination}
             startDate={trip?.start_date}
             endDate={trip?.end_date}
+            dateRangeLabel={trip?.date_range_label}
             days={days}
             itineraryRef={itineraryRef}
             userRole={trip && "userRole" in trip ? (trip as import("@/types/trip").TripWithRole).userRole : "owner"}

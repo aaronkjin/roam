@@ -11,7 +11,7 @@ import { Plus, Compass } from "lucide-react";
 import type { Trip } from "@/types/trip";
 
 export default function DashboardPage() {
-  const { ownTrips, sharedTrips, loading, updateTrip } = useTrips();
+  const { ownTrips, sharedTrips, loading, updateTrip, deleteTrip } = useTrips();
   const [createOpen, setCreateOpen] = useState(false);
   const [editTrip, setEditTrip] = useState<Trip | null>(null);
 
@@ -83,6 +83,7 @@ export default function DashboardPage() {
         open={!!editTrip}
         onOpenChange={(open) => !open && setEditTrip(null)}
         onSave={updateTrip}
+        onDelete={deleteTrip}
       />
     </div>
   );

@@ -54,7 +54,7 @@ export function ItineraryMapLayout({ tripId }: ItineraryMapLayoutProps) {
 
   // Prevent text selection while dragging
   useEffect(() => {
-    const prevent = (e: MouseEvent) => { if (isDraggingDivider.current) e.preventDefault(); };
+    const prevent = (e: Event) => { if (isDraggingDivider.current) e.preventDefault(); };
     document.addEventListener("selectstart", prevent);
     return () => document.removeEventListener("selectstart", prevent);
   }, []);

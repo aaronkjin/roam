@@ -24,11 +24,10 @@ import { InspoFilters } from "./InspoFilters";
 import { InspoPreview } from "./InspoPreview";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus } from "lucide-react";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
 import type { InspoItem, InspoType } from "@/types/inspo";
 import type { TripWithRole } from "@/types/trip";
-import Link from "next/link";
 import { useTrips } from "@/context/TripsContext";
 
 interface InspoBoardProps {
@@ -136,18 +135,6 @@ export function InspoBoard({ tripId }: InspoBoardProps) {
             >
               <Plus className="w-4 h-4 mr-1" />
               Add Inspo
-            </Button>
-          )}
-          {canEdit && items.length > 0 && (
-            <Button
-              asChild
-              size="sm"
-              className="bg-jam hover:bg-jam/80 text-white"
-            >
-              <Link href={`/trip/${tripId}/generate`}>
-                <Sparkles className="w-4 h-4 mr-1" />
-                Generate Itinerary
-              </Link>
             </Button>
           )}
         </div>

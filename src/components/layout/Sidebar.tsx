@@ -18,6 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  Newspaper,
+  Bookmark,
 } from "lucide-react";
 import type { TripWithRole } from "@/types/trip";
 
@@ -107,6 +109,70 @@ export function Sidebar({
           >
             <Compass className="w-4 h-4" />
             Dashboard
+          </Link>
+        )}
+
+        {collapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/feed"
+                className={cn(
+                  "flex items-center justify-center p-2 transition-colors border-[2px] border-transparent mb-1",
+                  pathname === "/feed" || pathname.startsWith("/feed/")
+                    ? "bg-mist border-night text-night"
+                    : "text-rock hover:text-night hover:bg-sky/20"
+                )}
+              >
+                <Newspaper className="w-4 h-4" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">Feed</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Link
+            href="/feed"
+            className={cn(
+              "flex items-center gap-2 px-3 py-2 text-sm font-[family-name:var(--font-silkscreen)] uppercase tracking-wider transition-colors border-[2px] border-transparent mb-1",
+              pathname === "/feed"
+                ? "bg-mist border-night text-night"
+                : "text-rock hover:text-night hover:bg-sky/20"
+            )}
+          >
+            <Newspaper className="w-4 h-4" />
+            Feed
+          </Link>
+        )}
+
+        {collapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/feed/saved"
+                className={cn(
+                  "flex items-center justify-center p-2 transition-colors border-[2px] border-transparent mb-1",
+                  pathname === "/feed/saved"
+                    ? "bg-mist border-night text-night"
+                    : "text-rock hover:text-night hover:bg-sky/20"
+                )}
+              >
+                <Bookmark className="w-4 h-4" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">Saved</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Link
+            href="/feed/saved"
+            className={cn(
+              "flex items-center gap-2 px-3 py-2 text-sm font-[family-name:var(--font-silkscreen)] uppercase tracking-wider transition-colors border-[2px] border-transparent mb-1",
+              pathname === "/feed/saved"
+                ? "bg-mist border-night text-night"
+                : "text-rock hover:text-night hover:bg-sky/20"
+            )}
+          >
+            <Bookmark className="w-4 h-4" />
+            Saved
           </Link>
         )}
 

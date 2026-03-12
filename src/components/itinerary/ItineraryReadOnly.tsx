@@ -13,11 +13,13 @@ import {
   Hotel,
   StickyNote,
   Heading,
+  Star,
 } from "lucide-react";
 import type { ItineraryDay, ItineraryBlock } from "@/types/itinerary";
 
 interface ItineraryReadOnlyProps {
   days: (ItineraryDay & { blocks: ItineraryBlock[] })[];
+  showBlockReviews?: boolean;
 }
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; label: string; fallbackBg: string }> = {
@@ -37,9 +39,16 @@ function buildMapsUrl(block: ItineraryBlock): string | null {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(block.location)}`;
 }
 
-function ReadOnlyBlock({ block }: { block: ItineraryBlock }) {
+function ReadOnlyBlock({
+  block,
+  showBlockReviews = false,
+}: {
+  block: ItineraryBlock;
+  showBlockReviews?: boolean;
+}) {
   const config = typeConfig[block.type] || typeConfig.activity;
   const Icon = config.icon;
+  const hasReview = showBlockReviews && (block.rating != null || !!block.review_note?.trim());
 
   if (block.type === "heading") {
     return (
@@ -152,26 +161,58 @@ function ReadOnlyBlock({ block }: { block: ItineraryBlock }) {
             </span>
           )}
         </div>
+
+        {hasReview && (
+          <div className="space-y-1.5 border-t-[2px] border-night/10 pt-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-[family-name:var(--font-silkscreen)] text-night uppercase">
+                Traveler Review
+              </span>
+              {block.rating != null && block.rating > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-[family-name:var(--font-silkscreen)] text-jam border-[2px] border-jam/40 px-1.5 py-0.5">
+                  <Star className="w-3 h-3 fill-jam" />
+                  {block.rating}/5
+                </span>
+              )}
+            </div>
+            {block.review_note?.trim() && (
+              <p className="text-xs text-rock leading-relaxed italic">
+                {block.review_note.trim()}
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export function ItineraryReadOnly({ days }: ItineraryReadOnlyProps) {
+function stripDayPrefix(title: string, dayNumber: number): string {
+  // Remove leading "Day X — ", "Day X - ", "Day X: " if present
+  const pattern = new RegExp(`^Day\\s+${dayNumber}\\s*[—\\-:]\\s*`, "i");
+  return title.replace(pattern, "");
+}
+
+export function ItineraryReadOnly({
+  days,
+  showBlockReviews = false,
+}: ItineraryReadOnlyProps) {
   return (
     <div className="space-y-6">
-      {days.map((day) => (
+      {days.map((day) => {
+        const cleanTitle = day.title ? stripDayPrefix(day.title, day.day_number) : null;
+        return (
         <PixelWindow
           key={day.id}
-          title={`Day ${day.day_number}${day.title ? ` — ${day.title}` : ""}`}
+          title={`Day ${day.day_number}${cleanTitle ? ` — ${cleanTitle}` : ""}`}
           variant="mist"
         >
           <div className="space-y-3">
-            {(day.title || day.summary) && (
+            {(cleanTitle || day.summary) && (
               <>
                 <div className="space-y-1">
-                  {day.title && (
-                    <p className="text-sm font-bold text-night">{day.title}</p>
+                  {cleanTitle && (
+                    <p className="text-sm font-bold text-night">{cleanTitle}</p>
                   )}
                   {day.summary && (
                     <p className="text-xs text-rock">{day.summary}</p>
@@ -182,12 +223,17 @@ export function ItineraryReadOnly({ days }: ItineraryReadOnlyProps) {
             )}
             <div className="space-y-2">
               {day.blocks.map((block) => (
-                <ReadOnlyBlock key={block.id} block={block} />
+                <ReadOnlyBlock
+                  key={block.id}
+                  block={block}
+                  showBlockReviews={showBlockReviews}
+                />
               ))}
             </div>
           </div>
         </PixelWindow>
-      ))}
+        );
+      })}
     </div>
   );
 }

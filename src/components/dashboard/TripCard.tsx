@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Edit2 } from "lucide-react";
 import type { Trip, TripWithRole } from "@/types/trip";
 import { getProxiedImageUrl } from "@/lib/image-proxy";
+import { formatTripDateRange } from "@/lib/trip-dates";
 
 interface TripCardProps {
   trip: Trip;
@@ -33,6 +34,11 @@ export function TripCard({ trip, onEdit }: TripCardProps) {
   const userRole = isTripWithRole(trip) ? trip.userRole : "owner";
   const canEdit = userRole === "owner" || userRole === "editor";
   const isShared = userRole !== "owner";
+  const tripTiming = formatTripDateRange({
+    startDate: trip.start_date,
+    endDate: trip.end_date,
+    dateRangeLabel: trip.date_range_label,
+  });
 
   return (
     <div className="border-[3px] border-night bg-white pixel-shadow pixel-shadow-hover h-full relative group">
@@ -96,11 +102,10 @@ export function TripCard({ trip, onEdit }: TripCardProps) {
             <p className="text-xs text-rock line-clamp-2">{trip.description}</p>
           )}
 
-          {(trip.start_date || trip.end_date) && (
+          {tripTiming && (
             <p className="flex items-center gap-1 text-[10px] text-rock">
               <Calendar className="w-3 h-3" />
-              {trip.start_date}
-              {trip.end_date && ` — ${trip.end_date}`}
+              {tripTiming}
             </p>
           )}
         </div>

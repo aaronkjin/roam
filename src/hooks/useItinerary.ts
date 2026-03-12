@@ -7,7 +7,7 @@ export function useItinerary(tripId: string) {
   const [days, setDays] = useState<(ItineraryDay & { blocks: ItineraryBlock[] })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const fetchItinerary = useCallback(async () => {
     if (!tripId) return;
@@ -59,7 +59,11 @@ export function useItinerary(tripId: string) {
   );
 
   const updateBlock = useCallback(
-    async (blockId: string, input: UpdateBlockInput) => {
+    async (
+      blockId: string,
+      input: UpdateBlockInput,
+      options?: { immediate?: boolean }
+    ) => {
       // Optimistic update immediately
       setDays((prev) =>
         prev.map((day) => ({
@@ -70,9 +74,7 @@ export function useItinerary(tripId: string) {
         }))
       );
 
-      // Debounced save to API
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(async () => {
+      const persist = async () => {
         try {
           const res = await fetch(`/api/itinerary/blocks/${blockId}`, {
             method: "PATCH",
@@ -83,7 +85,24 @@ export function useItinerary(tripId: string) {
         } catch (err) {
           setError(err instanceof Error ? err.message : "Unknown error");
         }
+      };
+
+      const existingTimer = saveTimersRef.current.get(blockId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        saveTimersRef.current.delete(blockId);
+      }
+
+      if (options?.immediate) {
+        await persist();
+        return;
+      }
+
+      const timer = setTimeout(async () => {
+        saveTimersRef.current.delete(blockId);
+        await persist();
       }, 500);
+      saveTimersRef.current.set(blockId, timer);
     },
     []
   );

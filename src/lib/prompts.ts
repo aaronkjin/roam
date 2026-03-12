@@ -46,11 +46,17 @@ Guidelines:
 interface TripContext {
   startDate?: string;
   endDate?: string;
+  dateRangeLabel?: string;
   stayAddress?: string;
+  notes?: string;
+  budgetPreference?: "budget" | "balanced" | "luxury";
 }
 
 function buildTripContextBlock(ctx?: TripContext): string {
   const lines: string[] = [];
+  if (ctx?.dateRangeLabel) {
+    lines.push(`Traveler's trip timing: ${ctx.dateRangeLabel}`);
+  }
   if (ctx?.startDate && ctx?.endDate) {
     const start = new Date(ctx.startDate);
     const end = new Date(ctx.endDate);
@@ -61,10 +67,28 @@ function buildTripContextBlock(ctx?: TripContext): string {
       "Use real dates for each day heading (e.g. \"Day 1 — March 15, 2026\"). The title field for each day should include the real date."
     );
   }
+  if (ctx?.budgetPreference) {
+    const budgetLabel =
+      ctx.budgetPreference === "budget"
+        ? "budget-conscious"
+        : ctx.budgetPreference === "luxury"
+          ? "luxury"
+          : "balanced";
+    lines.push(`Budget preference: ${budgetLabel}`);
+    lines.push(
+      "Match the pricing, dining, and activity choices to this budget preference."
+    );
+  }
   if (ctx?.stayAddress) {
     lines.push(`Staying at: ${ctx.stayAddress}`);
     lines.push(
       "REQUIRED: Start every day with an accommodation block for departing from this address, and end every day with an accommodation block for returning here."
+    );
+  }
+  if (ctx?.notes) {
+    lines.push(`Traveler notes: ${ctx.notes}`);
+    lines.push(
+      "Prioritize these notes wherever possible, especially for must-do experiences and constraints."
     );
   }
   return lines.length > 0 ? "\n" + lines.join("\n") + "\n" : "";

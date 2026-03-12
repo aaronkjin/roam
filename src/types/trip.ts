@@ -9,10 +9,12 @@ export interface Trip {
   cover_image_url: string | null;
   start_date: string | null;
   end_date: string | null;
+  date_range_label: string | null;
   status: TripStatus;
   share_token: string | null;
   overall_rating: number | null;
   review_note: string | null;
+  forked_from: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -23,6 +25,7 @@ export interface CreateTripInput {
   destination?: string;
   start_date?: string;
   end_date?: string;
+  date_range_label?: string;
 }
 
 export interface UpdateTripInput {
@@ -32,6 +35,7 @@ export interface UpdateTripInput {
   cover_image_url?: string;
   start_date?: string;
   end_date?: string;
+  date_range_label?: string;
   status?: TripStatus;
   overall_rating?: number;
   review_note?: string;

@@ -9,10 +9,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Share2, FileText, Image, Check, Loader2, Users, Link as LinkIcon } from "lucide-react";
+import { Share2, FileText, ImageIcon, Check, Loader2, Users, Link as LinkIcon } from "lucide-react";
+import { PublishButton } from "@/components/feed/PublishButton";
 import { InviteDialog } from "./InviteDialog";
 import type { ItineraryDay, ItineraryBlock } from "@/types/itinerary";
 import type { CollaboratorRole } from "@/types/trip";
+import { formatTripDateRange } from "@/lib/trip-dates";
 
 interface ShareMenuProps {
   tripId: string;
@@ -20,6 +22,7 @@ interface ShareMenuProps {
   tripDestination?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  dateRangeLabel?: string | null;
   days: (ItineraryDay & { blocks: ItineraryBlock[] })[];
   itineraryRef?: React.RefObject<HTMLDivElement | null>;
   userRole?: CollaboratorRole;
@@ -34,26 +37,21 @@ const typeEmoji: Record<string, string> = {
   heading: "📌",
 };
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
-
 function formatItineraryAsText(
   title: string,
   destination: string | null | undefined,
   startDate: string | null | undefined,
   endDate: string | null | undefined,
+  dateRangeLabel: string | null | undefined,
   days: (ItineraryDay & { blocks: ItineraryBlock[] })[]
 ): string {
   const lines: string[] = [];
+  const tripTiming = formatTripDateRange({ startDate, endDate, dateRangeLabel });
 
   lines.push(`🗺 ${title}`);
   if (destination) lines.push(`📍 ${destination}`);
-  if (startDate && endDate) {
-    lines.push(`📅 ${formatDate(startDate)} – ${formatDate(endDate)}`);
-  } else if (startDate) {
-    lines.push(`📅 ${formatDate(startDate)}`);
+  if (tripTiming) {
+    lines.push(`📅 ${tripTiming}`);
   }
   lines.push("");
 
@@ -87,6 +85,7 @@ export function ShareMenu({
   tripDestination,
   startDate,
   endDate,
+  dateRangeLabel,
   days,
   itineraryRef,
   userRole = "owner",
@@ -106,6 +105,7 @@ export function ShareMenu({
         tripDestination,
         startDate,
         endDate,
+        dateRangeLabel,
         days
       );
       await navigator.clipboard.writeText(text);
@@ -116,7 +116,7 @@ export function ShareMenu({
     } finally {
       setLoading(null);
     }
-  }, [tripTitle, tripDestination, startDate, endDate, days]);
+  }, [tripTitle, tripDestination, startDate, endDate, dateRangeLabel, days]);
 
   const handleDownloadImage = useCallback(async () => {
     if (!itineraryRef?.current) return;
@@ -156,6 +156,14 @@ export function ShareMenu({
 
   return (
     <>
+      {isOwner && (
+        <PublishButton
+          tripId={tripId}
+          tripTitle={tripTitle}
+          destination={tripDestination || null}
+          days={days}
+        />
+      )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="gap-1.5">
@@ -193,14 +201,14 @@ export function ShareMenu({
             )}
             {textCopied ? "Text Copied!" : "Copy as Text"}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleDownloadImage} disabled={loading === "image"}>
-            {loading === "image" ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Image className="w-4 h-4 mr-2" />
-            )}
-            Download as Image
-          </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownloadImage} disabled={loading === "image"}>
+                {loading === "image" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <ImageIcon className="w-4 h-4 mr-2" />
+                )}
+                Download as Image
+              </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

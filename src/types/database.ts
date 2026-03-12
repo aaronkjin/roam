@@ -6,6 +6,7 @@ export type {
   UpdateInspoInput,
   UrlPreview,
 } from "./inspo";
+export type { PublishedItinerary, FeedComment, FeedFilters } from "./feed";
 export type {
   ItineraryDay,
   ItineraryBlock,

@@ -7,6 +7,15 @@ interface UseGenerateOptions {
   tripId: string;
 }
 
+interface GenerateRequestOptions {
+  startDate?: string;
+  endDate?: string;
+  dateRangeLabel?: string;
+  stayAddress?: string;
+  notes?: string;
+  budgetPreference?: "budget" | "balanced" | "luxury";
+}
+
 export function useGenerate({ tripId }: UseGenerateOptions) {
   const [generating, setGenerating] = useState(false);
   const [streamedText, setStreamedText] = useState("");
@@ -18,7 +27,7 @@ export function useGenerate({ tripId }: UseGenerateOptions) {
       mode: GenerationMode,
       numDays: number,
       selectedInspoIds?: string[],
-      options?: { startDate?: string; endDate?: string; stayAddress?: string }
+      options?: GenerateRequestOptions
     ) => {
       setGenerating(true);
       setStreamedText("");
@@ -36,7 +45,10 @@ export function useGenerate({ tripId }: UseGenerateOptions) {
             selected_inspo_ids: selectedInspoIds,
             start_date: options?.startDate,
             end_date: options?.endDate,
+            date_range_label: options?.dateRangeLabel,
             stay_address: options?.stayAddress,
+            notes: options?.notes,
+            budget_preference: options?.budgetPreference,
           }),
         });
 

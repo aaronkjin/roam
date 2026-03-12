@@ -10,6 +10,8 @@ const isPublicRoute = createRouteMatcher([
   "/api/geocode",
   "/api/photos",
   "/api/setup",
+  "/feed/(.*)",
+  "/api/feed(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

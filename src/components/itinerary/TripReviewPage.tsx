@@ -107,10 +107,12 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
     }));
   }, []);
 
-  // Initialize state from loaded data once
-  if (!initialized && !loading && days.length > 0) {
+  useEffect(() => {
+    if (initialized || loading || days.length === 0) return;
+
     setOverallRating(trip?.overall_rating || 0);
     setReviewNote(trip?.review_note || "");
+
     const initial: Record<string, { rating: number; review_note: string }> = {};
     for (const day of days) {
       for (const block of day.blocks) {
@@ -121,9 +123,10 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
         };
       }
     }
+
     setBlockReviews(initial);
     setInitialized(true);
-  }
+  }, [days, initialized, loading, trip?.overall_rating, trip?.review_note]);
 
   const updateBlockRating = useCallback((blockId: string, rating: number) => {
     setBlockReviews((prev) => ({
@@ -151,14 +154,16 @@ export function TripReviewPage({ tripId }: TripReviewPageProps) {
       });
 
       // Save per-block reviews
-      const blockUpdates = Object.entries(blockReviews)
-        .filter(([, review]) => review.rating > 0 || review.review_note)
-        .map(([blockId, review]) =>
-          updateBlock(blockId, {
+      const blockUpdates = Object.entries(blockReviews).map(([blockId, review]) =>
+        updateBlock(
+          blockId,
+          {
             rating: review.rating || null,
-            review_note: review.review_note || null,
-          })
-        );
+            review_note: review.review_note.trim() || null,
+          },
+          { immediate: true }
+        )
+      );
       await Promise.all(blockUpdates);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);

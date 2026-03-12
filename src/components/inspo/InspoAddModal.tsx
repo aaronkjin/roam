@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,8 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { PixelSpinner } from "@/components/pixel/PixelSpinner";
 import { useUrlPreview } from "@/hooks/useUrlPreview";
-import type { InspoType, CreateInspoInput } from "@/types/inspo";
-import { Link, Image, Video, FileText, StickyNote, X } from "lucide-react";
+import type { CreateInspoInput } from "@/types/inspo";
+import { ImageIcon, Video, X } from "lucide-react";
 
 interface InspoAddModalProps {
   open: boolean;
@@ -23,16 +23,7 @@ interface InspoAddModalProps {
   onAdd: (input: Omit<CreateInspoInput, "trip_id">) => Promise<unknown>;
 }
 
-const types: { value: InspoType; label: string; icon: React.ElementType }[] = [
-  { value: "link", label: "Link", icon: Link },
-  { value: "image", label: "Image", icon: Image },
-  { value: "video", label: "Video", icon: Video },
-  { value: "article", label: "Article", icon: FileText },
-  { value: "note", label: "Note", icon: StickyNote },
-];
-
 export function InspoAddModal({ open, onOpenChange, onAdd }: InspoAddModalProps) {
-  const [type, setType] = useState<InspoType>("link");
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -41,8 +32,10 @@ export function InspoAddModal({ open, onOpenChange, onAdd }: InspoAddModalProps)
   const [tags, setTags] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const { preview, loading: parseLoading } = useUrlPreview(
-    type !== "note" ? url : ""
+  const { preview, loading: parseLoading } = useUrlPreview(url);
+  const detectedType = useMemo(
+    () => (preview?.type === "video" ? "video" : preview?.type === "image" ? "image" : null),
+    [preview?.type]
   );
 
   // Auto-fill from preview
@@ -66,7 +59,7 @@ export function InspoAddModal({ open, onOpenChange, onAdd }: InspoAddModalProps)
     setSaving(true);
 
     await onAdd({
-      type: preview?.type || type,
+      type: detectedType || "image",
       url: url || undefined,
       title: displayTitle || undefined,
       description: displayDesc || undefined,
@@ -83,7 +76,6 @@ export function InspoAddModal({ open, onOpenChange, onAdd }: InspoAddModalProps)
   };
 
   const resetForm = () => {
-    setType("link");
     setUrl("");
     setTitle("");
     setDescription("");
@@ -103,73 +95,65 @@ export function InspoAddModal({ open, onOpenChange, onAdd }: InspoAddModalProps)
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Type selector */}
-          <div className="flex gap-2 flex-wrap">
-            {types.map((t) => {
-              const Icon = t.icon;
-              return (
-                <button
-                  key={t.value}
-                  type="button"
-                  onClick={() => setType(t.value)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 border-[2px] text-xs font-[family-name:var(--font-silkscreen)] uppercase transition-colors ${
-                    type === t.value
-                      ? "border-night bg-jam text-white"
-                      : "border-night/30 text-rock hover:border-night"
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-
           {/* URL input */}
-          {type !== "note" && (
-            <div>
-              <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
-                URL
-              </label>
-              <div className="relative">
-                <Input
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="Paste a URL..."
-                  type="url"
-                />
-                {parseLoading && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <PixelSpinner size="sm" />
-                  </div>
-                )}
-              </div>
-              {preview && (
-                <div className="mt-2 p-2 border-[2px] border-night/20 bg-mist/20 flex gap-3">
-                  {preview.image_url && (
-                    <img
-                      src={preview.image_url}
-                      alt=""
-                      className="w-16 h-16 object-cover border border-night/20"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-night truncate">
-                      {preview.title}
-                    </p>
-                    <p className="text-[10px] text-rock line-clamp-2">
-                      {preview.description}
-                    </p>
-                    {preview.site_name && (
-                      <p className="text-[10px] text-rock/60 mt-0.5">
-                        {preview.site_name}
-                      </p>
-                    )}
-                  </div>
+          <div>
+            <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
+              Paste URL
+            </label>
+            <div className="relative">
+              <Input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="Paste a TikTok, Reel, YouTube, Pinterest, or photo link..."
+                type="url"
+                required
+              />
+              {parseLoading && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <PixelSpinner size="sm" />
                 </div>
               )}
             </div>
-          )}
+            <div className="mt-2 flex items-center gap-2 text-[10px] text-rock">
+              {detectedType === "video" ? (
+                <>
+                  <Video className="w-3.5 h-3.5" />
+                  Detected as video
+                </>
+              ) : detectedType === "image" ? (
+                <>
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  Detected as photo link
+                </>
+              ) : (
+                "We will auto-detect whether this is a photo or video link."
+              )}
+            </div>
+            {preview && (
+              <div className="mt-2 p-2 border-[2px] border-night/20 bg-mist/20 flex gap-3">
+                {preview.image_url && (
+                  <img
+                    src={preview.image_url}
+                    alt=""
+                    className="w-16 h-16 object-cover border border-night/20"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-night truncate">
+                    {preview.title}
+                  </p>
+                  <p className="text-[10px] text-rock line-clamp-2">
+                    {preview.description}
+                  </p>
+                  {preview.site_name && (
+                    <p className="text-[10px] text-rock/60 mt-0.5">
+                      {preview.site_name}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Title */}
           <div>
@@ -177,16 +161,16 @@ export function InspoAddModal({ open, onOpenChange, onAdd }: InspoAddModalProps)
               Title
             </label>
             <Input
-              value={title}
+              value={displayTitle}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={preview?.title || "Give it a name..."}
+              placeholder="Give it a name..."
             />
           </div>
 
           {/* Note / Description */}
           <div>
             <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
-              {type === "note" ? "Note" : "Your Note"}
+              Your Note
             </label>
             <Textarea
               value={userNote}

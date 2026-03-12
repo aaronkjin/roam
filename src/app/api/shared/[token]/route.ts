@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isMissingDateRangeLabelColumn } from "@/lib/supabase/date-range-compat";
 
 export async function GET(
   _req: NextRequest,
@@ -9,11 +10,21 @@ export async function GET(
   const supabase = await createClient();
 
   // Find trip by share token
-  const { data: trip, error: tripError } = await supabase
+  let { data: trip, error: tripError } = await supabase
     .from("trips")
-    .select("id, title, description, destination, start_date, end_date")
+    .select("id, title, description, destination, start_date, end_date, date_range_label")
     .eq("share_token", token)
     .single();
+
+  if (isMissingDateRangeLabelColumn(tripError)) {
+    const retry = await supabase
+      .from("trips")
+      .select("id, title, description, destination, start_date, end_date")
+      .eq("share_token", token)
+      .single();
+    trip = retry.data ? { ...retry.data, date_range_label: null } : retry.data;
+    tripError = retry.error;
+  }
 
   if (tripError || !trip) {
     return NextResponse.json({ error: "Shared itinerary not found" }, { status: 404 });

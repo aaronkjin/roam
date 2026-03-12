@@ -1,14 +1,10 @@
 import { ItineraryReadOnly } from "@/components/itinerary/ItineraryReadOnly";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
 import { MapPin, Calendar } from "lucide-react";
+import { formatTripDateRange } from "@/lib/trip-dates";
 
 interface SharedPageProps {
   params: Promise<{ token: string }>;
-}
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default async function SharedItineraryPage({ params }: SharedPageProps) {
@@ -37,6 +33,11 @@ export default async function SharedItineraryPage({ params }: SharedPageProps) {
   }
 
   const { trip, days } = await res.json();
+  const tripTiming = formatTripDateRange({
+    startDate: trip.start_date,
+    endDate: trip.end_date,
+    dateRangeLabel: trip.date_range_label,
+  });
 
   return (
     <div className="min-h-screen bg-[#faf9f6]">
@@ -56,11 +57,10 @@ export default async function SharedItineraryPage({ params }: SharedPageProps) {
                 {trip.destination}
               </span>
             )}
-            {trip.start_date && (
+            {tripTiming && (
               <span className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                {formatDate(trip.start_date)}
-                {trip.end_date && ` – ${formatDate(trip.end_date)}`}
+                {tripTiming}
               </span>
             )}
           </div>
