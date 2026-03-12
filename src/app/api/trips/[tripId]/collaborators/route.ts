@@ -149,7 +149,14 @@ export async function POST(
       );
     }
 
-    // Insert as collaborator (not yet accepted)
+    // Clean up any stale pending invites for this email+trip
+    await supabase
+      .from("pending_invites")
+      .delete()
+      .eq("trip_id", tripId)
+      .eq("email", email);
+
+    // Insert as collaborator (auto-accepted for existing users)
     const { data: newCollab, error: insertError } = await supabase
       .from("trip_collaborators")
       .insert({
@@ -158,6 +165,7 @@ export async function POST(
         role,
         invited_by: userId,
         invited_email: email,
+        accepted_at: new Date().toISOString(),
       })
       .select("*, user:users(id, email, display_name, avatar_url)")
       .single();

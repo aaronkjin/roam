@@ -31,6 +31,7 @@ export function InviteDialog({ tripId, open, onOpenChange }: InviteDialogProps) 
     collaborators,
     pendingInvites,
     loading,
+    error,
     inviteCollaborator,
     updateRole,
     removeCollaborator,
@@ -49,7 +50,8 @@ export function InviteDialog({ tripId, open, onOpenChange }: InviteDialogProps) 
     if (success) {
       setEmail("");
     } else {
-      setInviteError("Failed to send invite. User may already be invited.");
+      // Show the actual error from the hook's state
+      setInviteError(null); // Will fall through to display hook error below
     }
     setInviting(false);
   };
@@ -105,8 +107,8 @@ export function InviteDialog({ tripId, open, onOpenChange }: InviteDialogProps) 
               )}
             </Button>
           </div>
-          {inviteError && (
-            <p className="text-xs text-destructive">{inviteError}</p>
+          {(inviteError || error) && (
+            <p className="text-xs text-destructive">{inviteError || error}</p>
           )}
         </div>
 

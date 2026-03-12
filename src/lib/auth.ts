@@ -27,7 +27,8 @@ export async function ensureUserSynced(userId: string): Promise<void> {
   if (!user) return;
 
   const supabase = await createClient();
-  const email = user.emailAddresses[0]?.emailAddress;
+  const allEmails = user.emailAddresses.map(e => e.emailAddress).filter(Boolean);
+  const email = allEmails[0];
   if (!email) return;
 
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
@@ -49,11 +50,11 @@ export async function ensureUserSynced(userId: string): Promise<void> {
     .update({ user_id: userId })
     .is("user_id", null);
 
-  // Resolve pending invites for this email
+  // Resolve pending invites for any of this user's emails
   const { data: pendingInvites } = await supabase
     .from("pending_invites")
     .select("*")
-    .eq("email", email);
+    .in("email", allEmails);
 
   if (pendingInvites && pendingInvites.length > 0) {
     for (const invite of pendingInvites) {
@@ -75,8 +76,15 @@ export async function ensureUserSynced(userId: string): Promise<void> {
     await supabase
       .from("pending_invites")
       .delete()
-      .eq("email", email);
+      .in("email", allEmails);
   }
+
+  // Auto-accept any unaccepted collaborator invites for this user
+  await supabase
+    .from("trip_collaborators")
+    .update({ accepted_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .is("accepted_at", null);
 }
 
 /**
