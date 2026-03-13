@@ -1,10 +1,10 @@
 # Roam
 
-Make your inspos into a trip
+Turn your inspos into a curated trip
 
 ![Demo](docs/demo.gif)
 
-Click [here](https://tryroam.xyz)
+Click [here](https://tryroam.xyz) to check it out
 
 ## What it does
 
