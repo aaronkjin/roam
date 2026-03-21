@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Sparkles, Lightbulb, PenTool, ClipboardCheck, Users } from "lucide-react";
+import { Sparkles, Lightbulb, PenTool, ClipboardCheck, Users, Lock } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { InviteDialog } from "@/components/itinerary/InviteDialog";
@@ -35,8 +35,8 @@ export function TripNav({ tripId }: TripNavProps) {
 
   return (
     <>
-      <nav className="flex items-stretch justify-between gap-3 border-b-[3px] border-night bg-milk">
-        <div className="flex min-w-0">
+      <nav className="flex items-stretch justify-between gap-3 border-b-[3px] border-night bg-milk overflow-x-auto">
+        <div className="flex min-w-0 shrink-0">
           {tabs.map((tab, i) => {
             const href = `/trip/${tripId}/${tab.href}`;
             const isActive = pathname.startsWith(href);
@@ -47,7 +47,7 @@ export function TripNav({ tripId }: TripNavProps) {
                 key={tab.href}
                 href={href}
                 className={cn(
-                  "flex items-center gap-2 px-6 py-3 font-[family-name:var(--font-silkscreen)] text-sm uppercase tracking-wider transition-colors border-b-[3px] -mb-[3px]",
+                  "flex items-center gap-2 px-3 sm:px-6 py-3 font-[family-name:var(--font-silkscreen)] text-sm uppercase tracking-wider transition-colors border-b-[3px] -mb-[3px]",
                   i > 0 && "border-l-[3px] border-l-night",
                   i === tabs.length - 1 && "border-r-[3px] border-r-night",
                   isActive
@@ -56,10 +56,13 @@ export function TripNav({ tripId }: TripNavProps) {
                 )}
               >
                 <Icon className="w-4 h-4" />
-                {tab.label}
+                <span className="hidden sm:inline">{tab.label}</span>
+                {tab.href === "generate" && userRole !== "owner" && (
+                  <Lock className="w-3 h-3 text-rock/60" />
+                )}
                 <span
                   className={cn(
-                    "w-5 h-5 flex items-center justify-center text-[10px] border-[2px] ml-1",
+                    "w-5 h-5 items-center justify-center text-[10px] border-[2px] ml-1 hidden sm:flex",
                     isActive
                       ? "border-white bg-white/20 text-white"
                       : "border-night/30 text-rock"

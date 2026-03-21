@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Menu, Ruler } from "lucide-react";
+import { Menu, Ruler, Sparkles } from "lucide-react";
 import { SignedIn, SignedOut, UserButton, SignInButton } from "@clerk/nextjs";
 import { useDistanceUnit } from "@/context/DistanceUnitContext";
+import { useGenerationContext } from "@/context/GenerationContext";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 export function Header({ onToggleSidebar }: HeaderProps) {
   const { unit, toggleUnit } = useDistanceUnit();
+  const { generating, tripId: genTripId } = useGenerationContext();
 
   return (
     <header className="h-16 border-b-[3px] border-night bg-white flex items-center px-4 gap-4">
@@ -36,6 +38,15 @@ export function Header({ onToggleSidebar }: HeaderProps) {
         </h1>
       </Link>
       <div className="flex-1" />
+      {generating && genTripId && (
+        <Link
+          href={`/trip/${genTripId}/generate`}
+          className="flex items-center gap-1.5 px-2 py-1 border-[2px] border-grass bg-grass/10 text-xs font-[family-name:var(--font-silkscreen)] text-night animate-pulse"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-grass" />
+          Generating...
+        </Link>
+      )}
       <SignedIn>
         <UserButton
           appearance={{

@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     ],
     stream: true,
     temperature: mode === "creative" ? 0.9 : 0.3,
-    max_completion_tokens: 6000,
+    max_completion_tokens: 16000,
   });
 
   const encoder = new TextEncoder();

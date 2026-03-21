@@ -114,11 +114,32 @@ export function useCollaborators(tripId: string) {
     [tripId, fetchCollaborators]
   );
 
+  const deletePendingInvite = useCallback(
+    async (inviteId: string) => {
+      try {
+        const res = await fetch(`/api/trips/${tripId}/collaborators/pending/${inviteId}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error("Failed to delete invite");
+        await fetchCollaborators();
+        return true;
+      } catch (err) {
+        setState((prev) => ({
+          ...prev,
+          error: err instanceof Error ? err.message : "Unknown error",
+        }));
+        return false;
+      }
+    },
+    [tripId, fetchCollaborators]
+  );
+
   return {
     ...state,
     fetchCollaborators,
     inviteCollaborator,
     updateRole,
     removeCollaborator,
+    deletePendingInvite,
   };
 }

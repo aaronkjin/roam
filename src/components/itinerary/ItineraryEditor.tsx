@@ -204,7 +204,7 @@ export function ItineraryEditor({
   );
 
   const handleAcceptSuggestion = useCallback(
-    (blockId: string, suggestion: import("@/hooks/useBlockAIEdit").BlockEditSuggestion) => {
+    async (blockId: string, suggestion: import("@/hooks/useBlockAIEdit").BlockEditSuggestion) => {
       const updates: UpdateBlockInput = {};
       if (suggestion.title) updates.title = suggestion.title;
       if (suggestion.description) updates.description = suggestion.description;
@@ -215,13 +215,24 @@ export function ItineraryEditor({
       if (suggestion.location_lat) updates.location_lat = suggestion.location_lat;
       if (suggestion.location_lng) updates.location_lng = suggestion.location_lng;
       if (suggestion.cost_estimate !== undefined) updates.cost_estimate = suggestion.cost_estimate;
+
+      // Fetch new photo if title changed and photo_query exists
+      const originalBlock = days.flatMap((d) => d.blocks).find((b) => b.id === blockId);
+      if (suggestion.title && originalBlock && suggestion.title !== originalBlock.title && suggestion.photo_query) {
+        try {
+          const photoRes = await fetch(`/api/photos?q=${encodeURIComponent(suggestion.photo_query)}`);
+          const photoData = await photoRes.json();
+          if (photoData.url) updates.image_url = photoData.url;
+        } catch { /* skip photo update on error */ }
+      }
+
       updateBlock(blockId, updates);
       aiEdit.acceptSuggestion(blockId);
     },
-    [updateBlock, aiEdit]
+    [updateBlock, aiEdit, days]
   );
 
-  const handleAcceptAll = useCallback(() => {
+  const handleAcceptAll = useCallback(async () => {
     const accepted = aiEdit.acceptAll();
     for (const suggestion of accepted) {
       const updates: UpdateBlockInput = {};
@@ -234,10 +245,21 @@ export function ItineraryEditor({
       if (suggestion.location_lat) updates.location_lat = suggestion.location_lat;
       if (suggestion.location_lng) updates.location_lng = suggestion.location_lng;
       if (suggestion.cost_estimate !== undefined) updates.cost_estimate = suggestion.cost_estimate;
+
+      // Fetch new photo if title changed and photo_query exists
+      const originalBlock = days.flatMap((d) => d.blocks).find((b) => b.id === suggestion.id);
+      if (suggestion.title && originalBlock && suggestion.title !== originalBlock.title && suggestion.photo_query) {
+        try {
+          const photoRes = await fetch(`/api/photos?q=${encodeURIComponent(suggestion.photo_query)}`);
+          const photoData = await photoRes.json();
+          if (photoData.url) updates.image_url = photoData.url;
+        } catch { /* skip photo update on error */ }
+      }
+
       updateBlock(suggestion.id, updates);
     }
     aiEdit.clearSelection();
-  }, [updateBlock, aiEdit]);
+  }, [updateBlock, aiEdit, days]);
 
   // Get original blocks for diff preview
   const selectedOriginalBlocks = days

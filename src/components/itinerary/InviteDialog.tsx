@@ -35,6 +35,7 @@ export function InviteDialog({ tripId, open, onOpenChange }: InviteDialogProps) 
     inviteCollaborator,
     updateRole,
     removeCollaborator,
+    deletePendingInvite,
   } = useCollaborators(tripId);
 
   const [email, setEmail] = useState("");
@@ -212,11 +213,19 @@ export function InviteDialog({ tripId, open, onOpenChange }: InviteDialogProps) 
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-rock truncate">{invite.email}</p>
-                    <p className="text-[10px] text-rock/60">Not yet signed up</p>
+                    <p className="text-[10px] text-rock/60">Invite pending</p>
                   </div>
                   <Badge className={`${roleColors[invite.role]} text-[9px] shrink-0`}>
                     {invite.role}
                   </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={() => deletePendingInvite(invite.id)}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
                 </div>
               ))}
 

@@ -7,6 +7,7 @@ interface TripsContextValue {
   trips: TripWithRole[];
   ownTrips: TripWithRole[];
   sharedTrips: TripWithRole[];
+  pendingSharedTrips: TripWithRole[];
   loading: boolean;
   error: string | null;
   fetchTrips: () => Promise<void>;
@@ -21,6 +22,7 @@ const TripsContext = createContext<TripsContextValue | null>(null);
 export function TripsProvider({ children }: { children: React.ReactNode }) {
   const [ownTrips, setOwnTrips] = useState<TripWithRole[]>([]);
   const [sharedTrips, setSharedTrips] = useState<TripWithRole[]>([]);
+  const [pendingSharedTrips, setPendingSharedTrips] = useState<TripWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +39,7 @@ export function TripsProvider({ children }: { children: React.ReactNode }) {
       if (data.ownTrips && data.sharedTrips) {
         setOwnTrips(data.ownTrips);
         setSharedTrips(data.sharedTrips);
+        setPendingSharedTrips(data.pendingSharedTrips || []);
       } else if (Array.isArray(data)) {
         setOwnTrips(data.map((t: Trip) => ({ ...t, userRole: "owner" as const })));
         setSharedTrips([]);
@@ -132,6 +135,7 @@ export function TripsProvider({ children }: { children: React.ReactNode }) {
         trips,
         ownTrips,
         sharedTrips,
+        pendingSharedTrips,
         loading,
         error,
         fetchTrips,

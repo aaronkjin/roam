@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PixelSpinner } from "@/components/pixel/PixelSpinner";
-import { Trash2 } from "lucide-react";
+import { Trash2, ImageIcon, Loader2 } from "lucide-react";
 import { buildDateRangeLabel } from "@/lib/trip-dates";
 import type { Trip, UpdateTripInput } from "@/types/trip";
 
@@ -49,6 +49,9 @@ function EditTripForm({
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState(trip.cover_image_url || "");
+  const [photoOptions, setPhotoOptions] = useState<string[]>([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
   const exactDateRangeLabel = buildDateRangeLabel(startDate, endDate);
   const resolvedDateRangeLabel = exactDateRangeLabel || dateRangeLabel.trim();
 
@@ -65,13 +68,14 @@ function EditTripForm({
       start_date: startDate || undefined,
       end_date: endDate || undefined,
       date_range_label: resolvedDateRangeLabel,
+      cover_image_url: coverImageUrl || undefined,
     });
     setSaving(false);
     onClose();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
         <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
           Trip Name *
@@ -99,22 +103,21 @@ function EditTripForm({
         <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
           Exact Dates
         </label>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div>
-            <Input
-              type="date"
-              value={endDate}
-              min={startDate || undefined}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
+        <div className="flex gap-2 items-center">
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="flex-1"
+          />
+          <span className="text-xs text-rock font-[family-name:var(--font-silkscreen)] shrink-0">to</span>
+          <Input
+            type="date"
+            value={endDate}
+            min={startDate || undefined}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="flex-1"
+          />
         </div>
       </div>
 
@@ -150,6 +153,59 @@ function EditTripForm({
             rows={3}
           />
         </div>
+      </div>
+
+      {/* Cover photo */}
+      <div>
+        <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
+          <ImageIcon className="w-3 h-3 inline mr-1" />
+          Cover Photo
+        </label>
+        {coverImageUrl && (
+          <div className="relative w-full mb-2 border-[2px] border-night/20" style={{ aspectRatio: "16/7" }}>
+            <img
+              src={coverImageUrl}
+              alt="Cover"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        {photoOptions.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            {photoOptions.map((url, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`border-[2px] ${coverImageUrl === url ? "border-jam" : "border-night/20"} hover:border-jam transition-colors`}
+                style={{ aspectRatio: "16/9" }}
+                onClick={() => setCoverImageUrl(url)}
+              >
+                <img src={url} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={loadingPhotos || !destination.trim()}
+          onClick={async () => {
+            setLoadingPhotos(true);
+            try {
+              const res = await fetch(`/api/photos?q=${encodeURIComponent(destination.trim() + " travel")}&count=6`);
+              const data = await res.json();
+              if (data.urls?.length) setPhotoOptions(data.urls);
+            } catch { /* ignore */ }
+            setLoadingPhotos(false);
+          }}
+        >
+          {loadingPhotos ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <ImageIcon className="w-3.5 h-3.5 mr-1" />}
+          {photoOptions.length > 0 ? "Load More Photos" : "Choose Photo"}
+        </Button>
+        {!destination.trim() && (
+          <p className="mt-1 text-[10px] text-rock">Add a destination above to search for cover photos.</p>
+        )}
       </div>
 
       {onDelete && (

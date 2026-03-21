@@ -7,11 +7,11 @@ import { CreateTripModal } from "@/components/dashboard/CreateTripModal";
 import { EditTripModal } from "@/components/dashboard/EditTripModal";
 import { PixelWindow } from "@/components/pixel/PixelWindow";
 import { Button } from "@/components/ui/button";
-import { Plus, Compass } from "lucide-react";
+import { Plus, Compass, UserPlus } from "lucide-react";
 import type { Trip } from "@/types/trip";
 
 export default function DashboardPage() {
-  const { ownTrips, sharedTrips, loading, updateTrip, deleteTrip } = useTrips();
+  const { ownTrips, sharedTrips, pendingSharedTrips, loading, updateTrip, deleteTrip, acceptInvite } = useTrips();
   const [createOpen, setCreateOpen] = useState(false);
   const [editTrip, setEditTrip] = useState<Trip | null>(null);
 
@@ -61,19 +61,47 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Shared with me */}
-      {(loading || activeShared.length > 0) && activeShared.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-base">Shared with Me</h2>
-          <TripList trips={activeShared} loading={loading} onEditTrip={setEditTrip} />
-        </div>
-      )}
-
       {/* Past trips */}
       {(loading || pastTrips.length > 0) && (
         <div className="space-y-4">
           <h2 className="text-base">Past Trips</h2>
           <TripList trips={pastTrips} loading={loading} onEditTrip={setEditTrip} />
+        </div>
+      )}
+
+      {/* Pending invites */}
+      {pendingSharedTrips.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-base flex items-center gap-2">
+            <UserPlus className="w-4 h-4" />
+            Pending Invites
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {pendingSharedTrips.map((trip) => (
+              <div key={trip.id} className="border-[3px] border-dashed border-night/40 bg-white p-4 space-y-3">
+                <h4 className="text-sm font-bold text-night">{trip.title}</h4>
+                {trip.destination && (
+                  <p className="text-xs text-rock">{trip.destination}</p>
+                )}
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    await acceptInvite(trip.id);
+                  }}
+                >
+                  Accept Invite
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Shared with me */}
+      {(loading || activeShared.length > 0) && activeShared.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-base">Shared with Me</h2>
+          <TripList trips={activeShared} loading={loading} onEditTrip={setEditTrip} />
         </div>
       )}
 

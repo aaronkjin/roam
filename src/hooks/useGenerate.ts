@@ -86,12 +86,24 @@ export function useGenerate({ tripId }: UseGenerateOptions) {
           }
         }
 
-        // Parse the full response as JSON
+        // Parse the full response as JSON (with repair for truncated responses)
         try {
           const itinerary = JSON.parse(fullText) as GeneratedItinerary;
           setResult(itinerary);
         } catch {
-          setError("Failed to parse generated itinerary. Please try again.");
+          // Attempt to repair truncated JSON by trimming to last complete block
+          try {
+            const lastBracket = fullText.lastIndexOf("}]");
+            if (lastBracket > 0) {
+              const repaired = fullText.slice(0, lastBracket + 2) + "}";
+              const itinerary = JSON.parse(repaired) as GeneratedItinerary;
+              setResult(itinerary);
+            } else {
+              setError("Failed to parse generated itinerary. Please try again.");
+            }
+          } catch {
+            setError("Failed to parse generated itinerary. Please try again.");
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");

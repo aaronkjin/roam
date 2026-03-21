@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuth, ensureUserSynced, requireTripAccess } from "@/lib/auth";
 import { isMissingDateRangeLabelColumn } from "@/lib/supabase/date-range-compat";
+import { fetchPexelsImage } from "@/lib/pexels";
 
 interface InspoImageRow {
   image_url: string | null;
@@ -79,7 +80,29 @@ export async function GET() {
       };
     });
 
-  return NextResponse.json({ ownTrips, sharedTrips });
+  // Query pending invites (not yet accepted)
+  const { data: pendingData } = await supabase
+    .from("trip_collaborators")
+    .select("role, trip_id, trips(*, inspo_items(image_url))")
+    .eq("user_id", userId)
+    .is("accepted_at", null);
+
+  const pendingSharedTrips = ((pendingData || []) as unknown as CollaboratorTripRow[])
+    .filter((c) => c.trips)
+    .map((collab) => {
+      const { inspo_items, ...trip } = collab.trips!;
+      return {
+        ...trip,
+        cover_image_url:
+          trip.cover_image_url ??
+          inspo_items?.find((i: { image_url: string | null }) => i.image_url)
+            ?.image_url ??
+          null,
+        userRole: collab.role,
+      };
+    });
+
+  return NextResponse.json({ ownTrips, sharedTrips, pendingSharedTrips });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -201,6 +224,21 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error("[POST /api/trips]", error.message, error.code);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Fetch a cover photo from Pexels based on destination
+  if (data && body.destination) {
+    const coverUrl = await fetchPexelsImage(
+      `${body.destination} travel landmark`,
+      [`${body.destination} city`, `${body.destination} scenery`]
+    );
+    if (coverUrl) {
+      await supabase
+        .from("trips")
+        .update({ cover_image_url: coverUrl })
+        .eq("id", data.id);
+      data.cover_image_url = coverUrl;
+    }
   }
 
   return NextResponse.json(

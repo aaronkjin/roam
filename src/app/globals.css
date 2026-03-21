@@ -207,6 +207,7 @@
 [data-slot="dialog-content"] {
   border: 4px solid #3D5A80 !important;
   box-shadow: 8px 8px 0px #3D5A80;
+  padding-right: 2.25rem !important;
 }
 
 [data-slot="dialog-close"] {
@@ -224,11 +225,23 @@
 }
 
 /* Input overrides */
-[data-slot="input"],
+[data-slot="input"] {
+  border: 3px solid #3D5A80 !important;
+  font-family: var(--font-roboto-mono), monospace;
+  box-shadow: 2px 2px 0px #3D5A80;
+}
+
 [data-slot="textarea"] {
   border: 3px solid #3D5A80 !important;
   font-family: var(--font-roboto-mono), monospace;
   box-shadow: 2px 2px 0px #3D5A80;
+  resize: vertical !important;
+}
+
+/* Remove input/textarea shadows inside modals for symmetric spacing */
+[data-slot="dialog-content"] [data-slot="input"],
+[data-slot="dialog-content"] [data-slot="textarea"] {
+  box-shadow: none;
 }
 
 [data-slot="input"]:focus,
@@ -515,4 +528,48 @@ div[class^="cl-internal-"] {
 
 .mapboxgl-ctrl-attrib {
   display: none !important;
+}
+
+/* ===== Mobile responsiveness ===== */
+@media (max-width: 640px) {
+  .pixel-shadow {
+    box-shadow: 2px 2px 0px #3D5A80;
+  }
+
+  .pixel-shadow-hover:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px #3D5A80;
+  }
+
+  .pixel-shadow-hover:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px #3D5A80;
+  }
+
+  /* Smaller pixel fonts on mobile */
+  h1, .font-\[family-name\:var\(--font-press-start\)\] {
+    font-size: 0.75rem;
+  }
+
+  h2 {
+    font-size: 0.875rem;
+  }
+
+  /* Full-width modals on mobile */
+  [data-slot="dialog-content"] {
+    max-width: calc(100vw - 2rem) !important;
+    margin: 1rem;
+  }
+
+  /* Ensure touch targets are at least 44px */
+  [data-slot="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Smaller button exception for icon-only */
+  [data-slot="button"][data-size="icon"] {
+    min-height: 36px;
+    min-width: 36px;
+  }
 }

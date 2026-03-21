@@ -59,10 +59,13 @@ ACTIVITY DENSITY:
 - Each sub-activity needs a specific location name with precise GPS coordinates
 - Group sub-activities within walking distance of each other
 
-GEOGRAPHIC CLUSTERING:
-- All activities within a morning or afternoon slot must be within 1km walking distance of each other
-- When transitioning between neighborhoods, cluster at least 2-3 activities in the new area before moving on
-- Never schedule a single activity in an area then immediately leave
+GEOGRAPHIC CLUSTERING (CRITICAL — follow strictly):
+- All activities within a morning or afternoon slot must be within 2km of each other (walking or 1 transit stop)
+- Estimate realistic transit time between locations: walking (~5 min/400m), subway (~15 min between stations), taxi (~10 min/3km). Add this to scheduling.
+- When transitioning between neighborhoods, add a "heading" block naming the new district/area
+- Cluster at least 3 activities in each area before moving on — never schedule a single activity in a district then immediately leave
+- Organize each day around 1-2 neighborhoods maximum. Morning in one area, afternoon in the same or one adjacent area
+- If the user's inspo items are spread across the city, group geographically similar items onto the same day even if it means reordering
 
 - Always output ONLY the JSON, no markdown or extra text`;
 

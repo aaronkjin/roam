@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useInspoItems } from "@/hooks/useInspoItems";
-import { useGenerate } from "@/hooks/useGenerate";
+import { useGenerationContext } from "@/context/GenerationContext";
 import { ModeToggle } from "./ModeToggle";
 import { InspoSummary } from "./InspoSummary";
 import { GenerateLoading } from "./GenerateLoading";
@@ -134,10 +134,16 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
   const { trips: allTrips, updateTrip, fetchTrips } = useTrips();
   const tripData = allTrips.find((t) => t.id === tripId);
   const userRole = tripData && "userRole" in tripData ? (tripData as TripWithRole).userRole : "owner";
-  const canEdit = userRole === "owner" || userRole === "editor";
+  const canEdit = userRole === "owner";
   const router = useRouter();
   const { items, loading: inspoLoading } = useInspoItems(tripId);
-  const { generating, streamedText, result, error, generate, reset } = useGenerate({ tripId });
+  const { generating, tripId: genTripId, streamedText, result, error, generate: ctxGenerate, reset } = useGenerationContext();
+  // Only show generation state if it belongs to this trip
+  const isThisTrip = genTripId === tripId;
+  const activeGenerating = isThisTrip && generating;
+  const activeResult = isThisTrip ? result : null;
+  const activeError = isThisTrip ? error : null;
+  const activeStreamedText = isThisTrip ? streamedText : "";
 
   const [mode, setMode] = useState<GenerationMode>("creative");
   const [numDays, setNumDays] = useState(3);
@@ -191,7 +197,7 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
 
   const handleGenerate = useCallback(() => {
     if (selectedIds.size === 0) return;
-    generate(mode, numDays, Array.from(selectedIds), {
+    ctxGenerate(tripId, mode, numDays, Array.from(selectedIds), {
       startDate: tripData?.start_date || undefined,
       endDate: tripData?.end_date || undefined,
       dateRangeLabel: tripData?.date_range_label || undefined,
@@ -199,10 +205,10 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
       notes: notes.trim() || undefined,
       budgetPreference: budgetPreference || undefined,
     });
-  }, [budgetPreference, generate, mode, notes, numDays, selectedIds, stayAddress, tripData?.date_range_label, tripData?.end_date, tripData?.start_date]);
+  }, [budgetPreference, ctxGenerate, mode, notes, numDays, selectedIds, stayAddress, tripData?.date_range_label, tripData?.end_date, tripData?.start_date, tripId]);
 
   const handleAccept = useCallback(async () => {
-    if (!result) return;
+    if (!activeResult) return;
     setAccepting(true);
 
     try {
@@ -211,7 +217,8 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           trip_id: tripId,
-          days: result.days,
+          days: activeResult.days,
+          stay_address: stayAddress || undefined,
         }),
       });
 
@@ -223,7 +230,7 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
     } finally {
       setAccepting(false);
     }
-  }, [fetchTrips, result, tripId, router]);
+  }, [fetchTrips, activeResult, tripId, router, stayAddress]);
 
   if (inspoLoading) {
     return (
@@ -268,16 +275,17 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
       </div>
 
       {!canEdit && (
-        <PixelWindow title="View Only" variant="mist">
+        <PixelWindow title="Owner Only" variant="mist">
           <div className="text-center py-6 space-y-2">
             <p className="text-sm text-rock">
-              Only the trip owner can generate or replace the itinerary. Collaborators can still add inspo and leave reviews.
+              Only the trip owner can generate or replace the itinerary.
+              {userRole === "editor" ? " As an editor, you can still edit the itinerary, add inspo, and leave reviews." : " You can still view the itinerary and leave reviews."}
             </p>
           </div>
         </PixelWindow>
       )}
 
-      {canEdit && !generating && !result && (
+      {canEdit && !activeGenerating && !activeResult && (
         <>
           {/* Inspo selection */}
           <InspoSummary
@@ -312,25 +320,45 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
             <div className="flex flex-wrap items-end gap-6">
               <div>
                 <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
-                  Days
+                  Trip Length
                 </label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={14}
-                  value={numDays}
-                  onChange={(e) => setNumDays(Number(e.target.value))}
-                  className="w-20"
-                  disabled={!!exactDateRangeLabel}
-                />
+                {exactDateRangeLabel ? (
+                  <p className="text-xs text-night font-medium">
+                    {numDays} day{numDays !== 1 ? "s" : ""}{" "}
+                    <span className="text-rock font-normal">(locked to trip dates)</span>
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 w-9 p-0 text-lg"
+                      disabled={numDays <= 1}
+                      onClick={() => setNumDays((d) => Math.max(1, d - 1))}
+                    >
+                      −
+                    </Button>
+                    <div className="h-9 w-16 flex items-center justify-center border-y-[3px] border-night text-sm font-[family-name:var(--font-silkscreen)] text-night">
+                      {numDays}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 w-9 p-0 text-lg"
+                      disabled={numDays >= 14}
+                      onClick={() => setNumDays((d) => Math.min(14, d + 1))}
+                    >
+                      +
+                    </Button>
+                    <span className="ml-2 text-xs text-rock font-[family-name:var(--font-silkscreen)]">
+                      day{numDays !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
-
-            {exactDateRangeLabel && (
-              <p className="text-[10px] text-rock">
-                Days are locked to the saved trip dates. Edit the trip timing to change this.
-              </p>
-            )}
 
             <div className="flex items-end gap-6">
               <div className="flex-1">
@@ -450,13 +478,13 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
       )}
 
       {/* Loading */}
-      {generating && <GenerateLoading streamedText={streamedText} />}
+      {activeGenerating && <GenerateLoading streamedText={activeStreamedText} totalDays={numDays} />}
 
       {/* Error */}
-      {error && (
+      {activeError && (
         <PixelWindow title="Error" variant="jam">
           <div className="space-y-3">
-            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-sm text-destructive">{activeError}</p>
             <Button variant="outline" size="sm" onClick={reset}>
               Try Again
             </Button>
@@ -465,9 +493,9 @@ export function GeneratePanel({ tripId }: GeneratePanelProps) {
       )}
 
       {/* Preview */}
-      {result && (
+      {activeResult && (
         <GeneratePreview
-          itinerary={result}
+          itinerary={activeResult}
           onAccept={handleAccept}
           onRegenerate={handleGenerate}
           accepting={accepting}

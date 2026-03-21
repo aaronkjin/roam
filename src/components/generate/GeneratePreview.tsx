@@ -15,6 +15,15 @@ interface GeneratePreviewProps {
   accepting?: boolean;
 }
 
+/** Convert a numeric cost estimate to dollar-sign notation */
+function costToDollarSigns(cost: number | null | undefined): string | null {
+  if (cost == null || cost <= 0) return null;
+  if (cost <= 15) return "$";
+  if (cost <= 40) return "$$";
+  if (cost <= 100) return "$$$";
+  return "$$$$";
+}
+
 const blockTypeColors: Record<string, string> = {
   activity: "bg-jam text-white",
   food: "bg-grass text-night",
@@ -112,7 +121,9 @@ export function GeneratePreview({
                       {block.cost_estimate !== undefined && block.cost_estimate > 0 && (
                         <span className="flex items-center gap-1 text-[10px] text-rock">
                           <DollarSign className="w-3 h-3" />
-                          {block.cost_estimate} {block.currency || "USD"}
+                          {block.type === "food"
+                            ? costToDollarSigns(block.cost_estimate) || `${block.cost_estimate} ${block.currency || "USD"}`
+                            : `${block.cost_estimate} ${block.currency || "USD"}`}
                         </span>
                       )}
                     </div>
@@ -123,6 +134,18 @@ export function GeneratePreview({
           </div>
         </PixelWindow>
       ))}
+
+      {/* Bottom action buttons */}
+      <div className="flex items-center justify-end gap-2 pt-2">
+        <Button variant="outline" size="sm" onClick={onRegenerate}>
+          <RotateCcw className="w-3.5 h-3.5 mr-1" />
+          Regenerate
+        </Button>
+        <Button size="sm" onClick={onAccept} disabled={accepting}>
+          <Check className="w-3.5 h-3.5 mr-1" />
+          {accepting ? "Saving..." : "Accept & Edit"}
+        </Button>
+      </div>
     </div>
   );
 }

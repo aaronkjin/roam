@@ -21,7 +21,8 @@ interface PexelsPhoto {
  */
 export async function fetchPexelsImage(
   query: string,
-  fallbackQueries?: string[]
+  fallbackQueries?: string[],
+  excludeUrls?: Set<string>
 ): Promise<string | null> {
   const pexelsKey = process.env.PEXELS_API_KEY;
   if (!pexelsKey) return null;
@@ -31,7 +32,7 @@ export async function fetchPexelsImage(
   for (const q of queries) {
     try {
       const res = await fetch(
-        `${PEXELS_API_URL}?query=${encodeURIComponent(q)}&per_page=5&orientation=landscape`,
+        `${PEXELS_API_URL}?query=${encodeURIComponent(q)}&per_page=10&orientation=landscape`,
         { headers: { Authorization: pexelsKey } }
       );
       if (!res.ok) continue;
@@ -42,9 +43,18 @@ export async function fetchPexelsImage(
       if (photos.length === 0) continue;
 
       // Prefer landscape-oriented photos (width > height)
-      const landscape = photos.filter((p) => p.width > p.height);
-      const best = landscape.length > 0 ? landscape[0] : photos[0];
-      return best.src.large;
+      let candidates = photos.filter((p) => p.width > p.height);
+      if (candidates.length === 0) candidates = photos;
+
+      // Filter out already-used URLs to avoid duplicates
+      if (excludeUrls && excludeUrls.size > 0) {
+        const filtered = candidates.filter((p) => !excludeUrls.has(p.src.large));
+        if (filtered.length > 0) candidates = filtered;
+      }
+
+      // Pick a random result instead of always the first
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      return pick.src.large;
     } catch {
       continue;
     }

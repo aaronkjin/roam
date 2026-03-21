@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createClient();
   const body = await req.json();
-  const { trip_id, days } = body;
+  const { trip_id, days, stay_address, stay_lat, stay_lng } = body;
 
   if (!trip_id || !days) {
     return NextResponse.json(
@@ -81,6 +81,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Fetch photos sequentially to track used URLs and avoid duplicates
+  const usedUrls = new Set<string>();
+  const photoMap = new Map<string, string | null>();
+
+  // Process in parallel batches but track used URLs
   const photoResults = await Promise.allSettled(
     jobs.map(async ({ dayIdx, blockIdx, query, block }) => {
       const fallbacks = buildFallbackQueries(
@@ -88,12 +93,12 @@ export async function POST(req: NextRequest) {
         (block.type as string) || "activity",
         (block.location as string) || null,
       );
-      const imageUrl = await fetchPexelsImage(query, fallbacks);
+      const imageUrl = await fetchPexelsImage(query, fallbacks, usedUrls);
+      if (imageUrl) usedUrls.add(imageUrl);
       return { dayIdx, blockIdx, imageUrl };
     })
   );
 
-  const photoMap = new Map<string, string | null>();
   for (const r of photoResults) {
     if (r.status === "fulfilled" && r.value) {
       photoMap.set(`${r.value.dayIdx}:${r.value.blockIdx}`, r.value.imageUrl);
@@ -146,6 +151,71 @@ export async function POST(req: NextRequest) {
 
       if (blocksError) {
         return NextResponse.json({ error: blocksError.message }, { status: 500 });
+      }
+    }
+  }
+
+  // Auto-insert accommodation blocks if stay_address was provided
+  if (stay_address && days.length > 0) {
+    // Get inserted days to reference their IDs
+    const { data: insertedDays } = await supabase
+      .from("itinerary_days")
+      .select("id, day_number")
+      .eq("trip_id", trip_id)
+      .order("day_number", { ascending: true });
+
+    if (insertedDays && insertedDays.length > 0) {
+      const firstDay = insertedDays[0];
+      const lastDay = insertedDays[insertedDays.length - 1];
+
+      const accommodationBlocks = [];
+
+      // Check-in block at the start of day 1
+      accommodationBlocks.push({
+        day_id: firstDay.id,
+        type: "accommodation",
+        title: `Check in: ${stay_address}`,
+        description: null,
+        start_time: null,
+        end_time: null,
+        location: stay_address,
+        location_lat: stay_lat || null,
+        location_lng: stay_lng || null,
+        position_index: -1, // Will be reordered to position 0
+        ai_generated: true,
+      });
+
+      // Check-out block at the end of last day
+      accommodationBlocks.push({
+        day_id: lastDay.id,
+        type: "accommodation",
+        title: `Check out: ${stay_address}`,
+        description: null,
+        start_time: null,
+        end_time: null,
+        location: stay_address,
+        location_lat: stay_lat || null,
+        location_lng: stay_lng || null,
+        position_index: 9999, // Will be at the end
+        ai_generated: true,
+      });
+
+      await supabase.from("itinerary_blocks").insert(accommodationBlocks);
+
+      // Fix position indices for day 1 (shift everything after check-in)
+      const { data: day1Blocks } = await supabase
+        .from("itinerary_blocks")
+        .select("id, position_index")
+        .eq("day_id", firstDay.id)
+        .order("position_index", { ascending: true });
+
+      if (day1Blocks) {
+        for (let i = 0; i < day1Blocks.length; i++) {
+          await supabase
+            .from("itinerary_blocks")
+            .update({ position_index: i })
+            .eq("id", day1Blocks[i].id);
+        }
       }
     }
   }

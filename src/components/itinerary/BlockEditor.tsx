@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -83,6 +83,7 @@ export function BlockEditor({
 }: BlockEditorProps) {
   const [expanded, setExpanded] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const originalTitleRef = useRef(block.title);
   const config = typeConfig[block.type] || typeConfig.activity;
   const Icon = config.icon;
 
@@ -106,6 +107,21 @@ export function BlockEditor({
     },
     [block.id, onUpdate]
   );
+
+  const handleTitleBlur = useCallback(async () => {
+    const newTitle = block.title.trim();
+    const oldTitle = originalTitleRef.current.trim();
+    if (!canEdit || newTitle.length <= 3 || newTitle === oldTitle) return;
+    originalTitleRef.current = newTitle;
+    // Fetch new photo based on updated title
+    if (block.type !== "heading" && block.type !== "note") {
+      try {
+        const res = await fetch(`/api/photos?q=${encodeURIComponent(newTitle)}`);
+        const data = await res.json();
+        if (data.url) onUpdate(block.id, { image_url: data.url });
+      } catch { /* skip on error */ }
+    }
+  }, [block.id, block.title, block.type, canEdit, onUpdate]);
 
   const canOpenDetail = block.type === "activity" || block.type === "food";
 
@@ -498,6 +514,7 @@ export function BlockEditor({
             type="text"
             value={block.title}
             onChange={(e) => handleFieldChange("title", e.target.value)}
+            onBlur={handleTitleBlur}
             onClick={canOpenDetail && !isSelectMode ? () => setDetailOpen(true) : undefined}
             className={cn(
               "w-full text-sm font-medium text-night bg-transparent outline-none",

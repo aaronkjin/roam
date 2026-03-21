@@ -78,7 +78,7 @@ export function CreateTripModal({ open, onOpenChange }: CreateTripModalProps) {
             e.preventDefault();
             void handleCreate(false);
           }}
-          className="space-y-4"
+          className="space-y-5"
         >
           <div>
             <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
@@ -107,22 +107,21 @@ export function CreateTripModal({ open, onOpenChange }: CreateTripModalProps) {
             <label className="block text-xs font-[family-name:var(--font-silkscreen)] uppercase text-night mb-1.5">
               Exact Dates
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <Input
-                  type="date"
-                  value={endDate}
-                  min={startDate || undefined}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
+            <div className="flex gap-2 items-center">
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="flex-1"
+              />
+              <span className="text-xs text-rock font-[family-name:var(--font-silkscreen)] shrink-0">to</span>
+              <Input
+                type="date"
+                value={endDate}
+                min={startDate || undefined}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="flex-1"
+              />
             </div>
           </div>
 

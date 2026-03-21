@@ -6,6 +6,7 @@ import { SmiskiBuilder } from "@/components/pixel/SmiskiBuilder";
 
 interface GenerateLoadingProps {
   streamedText: string;
+  totalDays?: number;
 }
 
 const loadingMessages = [
@@ -16,9 +17,15 @@ const loadingMessages = [
   "Booking imaginary flights...",
 ];
 
-export function GenerateLoading({ streamedText }: GenerateLoadingProps) {
-  // Estimate progress based on text length (rough)
-  const progress = Math.min((streamedText.length / 3000) * 100, 95);
+export function GenerateLoading({ streamedText, totalDays }: GenerateLoadingProps) {
+  // Count completed days in streamed text as a progress proxy
+  const daysStreamed = (streamedText.match(/"day_number"/g) || []).length;
+  const dayBasedProgress = totalDays && daysStreamed > 0
+    ? Math.min((daysStreamed / totalDays) * 100, 95)
+    : 0;
+  // Fall back to text-length heuristic if no days detected yet
+  const textProgress = Math.min((streamedText.length / 3000) * 100, 95);
+  const progress = dayBasedProgress > 0 ? dayBasedProgress : textProgress;
   const msgIndex = Math.floor(progress / 20) % loadingMessages.length;
 
   return (
